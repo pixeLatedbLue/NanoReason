@@ -1,0 +1,23 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nanoreason-serve:local
+    container_name: nanoreason-api
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      NANOREASON_ENGINE: ${NANOREASON_ENGINE:-demo}
+      NANOREASON_CONFIG: ${NANOREASON_CONFIG:-configs/default.toml}
+      NANOREASON_ADAPTER: ${NANOREASON_ADAPTER:-}
+      NANOREASON_RESULTS: ${NANOREASON_RESULTS:-/app/results}
+      NANOREASON_CORS: ${NANOREASON_CORS:-}
+
+    volumes:
+      - ./results:/app/results:ro
+
+    restart: unless-stopped

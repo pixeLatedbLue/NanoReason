@@ -1,0 +1,94 @@
+[model]
+base_model = "microsoft/Phi-3-mini-4k-instruct"
+torch_dtype = "float32"
+device_map = "auto"
+load_in_4bit = false
+trust_remote_code = false
+
+[evaluation]
+output_dir = "results"
+run_name = "smoke"
+few_shot = true
+
+[evaluation.tasks.strategyqa]
+dataset = "tasksource/strategy-qa"
+split = "train"
+max_samples = 10
+seed = 42
+offset = 0
+
+[evaluation.tasks.gsm8k]
+dataset = "gsm8k"
+subset = "main"
+split = "test"
+max_samples = 10
+seed = 42
+offset = 0
+
+[evaluation.tasks.mmlu]
+dataset = "cais/mmlu"
+subset = "all"
+split = "test"
+max_samples = 10
+seed = 42
+offset = 0
+
+[evaluation.tasks.aqua]
+dataset = "aqua_rat"
+subset = "raw"
+split = "test"
+max_samples = 10
+seed = 42
+offset = 0
+
+[sft]
+output_dir = "artifacts/sft-smoke"
+final_dir = "artifacts/sft-smoke-final"
+dataset = "gsm8k"
+subset = "main"
+train_split = "train"
+extra_datasets = []
+validation_fraction = 0.05
+seed = 42
+max_seq_length = 1024
+num_train_epochs = 0.01
+per_device_train_batch_size = 1
+gradient_accumulation_steps = 1
+learning_rate = 0.0002
+warmup_ratio = 0.1
+logging_steps = 1
+eval_steps = 10
+save_steps = 20
+lora_r = 8
+lora_alpha = 16
+lora_dropout = 0.05
+completion_only = true
+response_template = "<|assistant|>"
+
+[grpo]
+sft_adapter = "artifacts/sft-smoke-final"
+output_dir = "artifacts/grpo-smoke"
+final_dir = "artifacts/grpo-smoke-final"
+dataset = "gsm8k"
+subset = "main"
+train_split = "train"
+seed = 42
+num_train_epochs = 0.01
+per_device_train_batch_size = 1
+gradient_accumulation_steps = 1
+learning_rate = 0.000005
+num_generations = 2
+max_prompt_length = 256
+max_completion_length = 128
+beta = 0.04
+temperature = 0.9
+logging_steps = 1
+save_steps = 20
+use_process_reward = true
+use_diversity_reward = true
+model_prm_scale = 1.0
+curriculum = true
+forgetting_check = false
+forgetting_every_steps = 100
+forgetting_task = "mmlu"
+forgetting_max_samples = 10

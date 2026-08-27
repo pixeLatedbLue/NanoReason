@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NanoReason</title>
+<meta name="description" content="Small-model reasoning with a verifiable reward — and the verifier itself, in the browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%E2%88%91%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead__inner">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 18 L9 6 L12 13 L15 9 L20 18" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <h1 class="brand__name">NanoReason</h1>
+        <p class="brand__tagline">Small-model reasoning, trained with a verifiable reward &mdash; and here is the verifier.</p>
+      </div>
+    </div>
+    <div class="engine">
+      <span id="engine-badge" class="badge badge--loading" role="status">checking engine&hellip;</span>
+      <span id="engine-meta" class="engine__meta"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs" role="tablist" aria-label="NanoReason sections">
+    <button type="button" class="tab" role="tab" id="tab-solve"  aria-controls="panel-solve"  aria-selected="true">Solve</button>
+    <button type="button" class="tab" role="tab" id="tab-verify" aria-controls="panel-verify" aria-selected="false" tabindex="-1">Verify</button>
+    <button type="button" class="tab" role="tab" id="tab-runs"   aria-controls="panel-runs"   aria-selected="false" tabindex="-1">Runs</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section id="panel-solve" class="panel" role="tabpanel" aria-labelledby="tab-solve" tabindex="0">
+    <p class="lede">Send a word problem to the model and watch the chain of thought arrive token by token.
+      Every equation it writes is then re-checked by the same deterministic verifier that produced the training reward.</p>
+
+    <div class="card">
+      <label class="lbl" for="solve-input">Word problem</label>
+      <textarea id="solve-input" class="ta" rows="4" spellcheck="false"
+        placeholder="e.g. A shop sells pencils in boxes of 12&hellip;"></textarea>
+
+      <div class="examples">
+        <span class="examples__lbl">Examples</span>
+        <div id="solve-examples" class="examples__row"></div>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="solve-btn" class="btn btn--primary">Solve</button>
+        <div class="field">
+          <label class="lbl lbl--inline" for="solve-gold">Gold answer <span class="opt">(optional)</span></label>
+          <input id="solve-gold" class="inp inp--sm" type="text" inputmode="decimal" placeholder="e.g. 72">
+        </div>
+        <div class="field">
+          <label class="lbl lbl--inline" for="solve-tokens">Max new tokens</label>
+          <input id="solve-tokens" class="inp inp--xs" type="number" min="16" max="2048" step="16" value="384">
+        </div>
+        <span id="solve-status" class="status" role="status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2 class="h2">Completion</h2>
+        <span class="hint">streamed live from <code>/api/solve/stream</code></span>
+      </div>
+      <div class="scroll-x">
+        <pre id="solve-output" class="stream" tabindex="0">&nbsp;</pre>
+      </div>
+    </div>
+
+    <div id="solve-analysis" class="analysis-host" aria-live="polite" aria-busy="false"></div>
+  </section>
+
+  <section id="panel-verify" class="panel" role="tabpanel" aria-labelledby="tab-verify" tabindex="0" hidden>
+    <p class="lede"><strong>No model is involved on this tab.</strong> That is the whole point: the process reward is a
+      deterministic verifier, so you can paste any reasoning at all &mdash; written by a model, or by you &mdash; and it will be
+      checked line by line on the CPU. Nothing is generated, nothing is guessed.</p>
+
+    <div class="card">
+      <label class="lbl" for="verify-input">Chain of thought to verify</label>
+      <textarea id="verify-input" class="ta ta--mono" rows="9" spellcheck="false">Natalia sold clips to 48 of her friends in April.
+In May she sold half as many clips, so 48 / 2 = 24 clips.
+Altogether that is 48 + 24 = 71 clips.
+She charges 3 dollars per clip, so 71 * 3 = 213 dollars.
+#### 213</textarea>
+      <p class="hint hint--block">The sample above contains one deliberately wrong step. The verifier finds it without knowing the answer.</p>
+
+      <div class="controls">
+        <button type="button" id="verify-btn" class="btn btn--primary">Verify</button>
+        <div class="field">
+          <label class="lbl lbl--inline" for="verify-gold">Gold answer <span class="opt">(optional)</span></label>
+          <input id="verify-gold" class="inp inp--sm" type="text" inputmode="decimal" value="216">
+        </div>
+        <span id="verify-status" class="status" role="status"></span>
+      </div>
+    </div>
+
+    <div id="verify-analysis" class="analysis-host" aria-live="polite" aria-busy="false"></div>
+  </section>
+
+  <section id="panel-runs" class="panel" role="tabpanel" aria-labelledby="tab-runs" tabindex="0" hidden>
+    <p class="lede">Every evaluation written to <code>results/</code> is listed here exactly as it was recorded. Nothing on this
+      tab is computed in the browser beyond formatting.</p>
+
+    <div class="card">
+      <div class="card__head">
+        <h2 class="h2">Evaluation runs</h2>
+        <button type="button" id="runs-refresh" class="btn btn--ghost">Refresh</button>
+      </div>
+      <div id="runs-host" aria-live="polite" aria-busy="false"></div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2 class="h2">Compare two runs</h2></div>
+      <p class="note">A raw delta is not evidence. Two runs of 200 items can differ by four points from sampling noise alone,
+        which is why each accuracy is shown with its Wilson interval and, where the same items were scored twice, a paired
+        McNemar test &mdash; overlapping intervals or a large p-value mean the difference has not been demonstrated.</p>
+
+      <div class="controls controls--wrap">
+        <div class="field">
+          <label class="lbl lbl--inline" for="cmp-baseline">Baseline</label>
+          <select id="cmp-baseline" class="inp"></select>
+        </div>
+        <div class="field">
+          <label class="lbl lbl--inline" for="cmp-candidate">Candidate</label>
+          <select id="cmp-candidate" class="inp"></select>
+        </div>
+        <div class="field">
+          <label class="lbl lbl--inline" for="cmp-threshold">Min improvement</label>
+          <input id="cmp-threshold" class="inp inp--xs" type="number" min="0" max="1" step="0.01" value="0.05">
+        </div>
+        <button type="button" id="cmp-btn" class="btn btn--primary">Compare</button>
+        <span id="cmp-status" class="status" role="status"></span>
+      </div>
+
+      <div id="compare-host" aria-live="polite" aria-busy="false"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap foot">
+  <span>NanoReason &mdash; QLoRA + GRPO on Phi-3-mini, evaluated on GSM8K / MMLU / StrategyQA / AQuA-RAT.</span>
+  <span id="version" class="foot__version"></span>
+</footer>
+
+<div id="toasts" class="toasts" role="region" aria-label="Notifications"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
