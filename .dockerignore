@@ -31,7 +31,6 @@ checkpoints/
 results/
 
 notebooks/
-docs/*.pdf
 
 *.log
 tmp/

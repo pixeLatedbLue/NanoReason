@@ -15,7 +15,7 @@ services:
       NANOREASON_CONFIG: ${NANOREASON_CONFIG:-configs/default.toml}
       NANOREASON_ADAPTER: ${NANOREASON_ADAPTER:-}
       NANOREASON_RESULTS: ${NANOREASON_RESULTS:-/app/results}
-      NANOREASON_CORS: ${NANOREASON_CORS:-}
+      NANOREASON_CORS: ${NANOREASON_CORS:-*}
 
     volumes:
       - ./results:/app/results:ro

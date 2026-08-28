@@ -84,6 +84,14 @@ def eval_strategyqa(tokenizer, model, cfg: EvalTaskConfig, few_shot: bool) -> Ev
 
 
 def eval_mmlu(tokenizer, model, cfg: EvalTaskConfig, few_shot: bool) -> EvalResult:
+    """Score MMLU by comparing the A/B/C/D next-token logits.
+
+    Nothing is generated here, so there is no place to put demonstrations:
+    ``mmlu_prompt`` takes no few-shot examples. The ``few_shot`` argument is
+    therefore discarded rather than threaded through as the other evaluators do,
+    and the result records ``few_shot=False`` so the run JSON states the
+    condition that actually applied.
+    """
     del few_shot
     data = load_eval_dataset(cfg)
     labels = ["A", "B", "C", "D"]

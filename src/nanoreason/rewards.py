@@ -1,8 +1,8 @@
 """Hybrid reward functions for GRPO.
 
-The proposal's central novelty is a *hybrid* reward that combines an
-outcome-level signal (ORM) with a dense process-level signal (PRM) so the
-policy cannot earn reward by gaming surface patterns alone.
+The central design is a *hybrid* reward that combines an outcome-level signal
+(ORM) with a dense process-level signal (PRM) so the policy cannot earn reward
+by gaming surface patterns alone.
 
 This module implements that with deterministic, hack-proof verifiers:
 
@@ -16,6 +16,10 @@ This module implements that with deterministic, hack-proof verifiers:
 
 An optional model-based PRM (e.g. a teacher-distilled Skywork reward model) can
 be plugged in through ``ModelProcessReward`` without changing the trainer.
+
+``correctness_reward`` and ``reasoning_reward`` are legacy aliases of
+``outcome_reward`` and ``process_reward``, kept so older training scripts that
+import the earlier names keep working. Nothing in this repository uses them.
 """
 
 from __future__ import annotations
@@ -82,7 +86,9 @@ def process_reward(prompts, completions, answer=None, **kwargs):
     exploitable in the opposite direction from the one it was guarding: a
     genuinely correct two-step solution to a two-step problem was scaled to
     0.67 while three padded trivial equations reached the full 1.0, so the
-    reward preferred padding to honest work (see the paper's Table II).
+    reward preferred padding to honest work (see experiment E1 in
+    ``experiments/component_validation.py``, which scores both floors side by
+    side and is runnable from a checkout).
     Measuring substance against what the problem actually requires removes that
     incentive: an honest solution reaches the ceiling, and padding past the
     reference earns nothing extra.

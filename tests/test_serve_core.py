@@ -96,7 +96,9 @@ class AnalysisTests(unittest.TestCase):
                 rewards = analyze(text, gold=gold)["rewards"]
                 self.assertEqual(rewards["outcome"], outcome_reward([""], [text], answer=[gold])[0])
                 self.assertEqual(rewards["format"], format_reward([""], [text])[0])
-                self.assertEqual(rewards["process"], process_reward([""], [text])[0])
+                self.assertEqual(
+                    rewards["process"], process_reward([""], [text], answer=[gold])[0]
+                )
                 self.assertEqual(rewards["diversity"], diversity_reward([""], [text])[0])
                 self.assertAlmostEqual(
                     rewards["total"],
@@ -144,6 +146,24 @@ class AnalysisTests(unittest.TestCase):
             self.assertTrue(result["correct"])
             self.assertEqual(result["rewards"]["outcome"], 2.0)
         self.assertEqual(bare["rewards"], full["rewards"])
+
+    def test_process_reward_scales_against_the_reference_solution(self):
+        """The substance floor must come from the gold rationale, as in training.
+
+        ``process_reward`` derives its floor from the reference solution's own
+        equation count and only falls back to the constant when the gold carries
+        none. A one-step completion answering a one-step problem is the case that
+        tells the two apart: full credit against the rationale, scaled down to
+        the three-step fallback against a bare number. If ``analyze`` ever stops
+        forwarding the raw gold, the first assertion drops to 0.3333 and the UI
+        starts printing a reward the trainer never gave.
+        """
+        completion = "5 + 7 = 12\n#### 12"
+        rationale = "Jane starts with 5 apples and buys 7 more.\n5 + 7 = 12\n#### 12"
+        against_rationale = analyze(completion, gold=rationale)["rewards"]["process"]
+        self.assertEqual(against_rationale, process_reward([""], [completion], answer=[rationale])[0])
+        self.assertEqual(against_rationale, 1.0)
+        self.assertEqual(analyze(completion, gold="12")["rewards"]["process"], 0.3333)
 
     def test_unparseable_gold_does_not_raise(self):
         result = analyze(GOOD_COT, gold="forty two")

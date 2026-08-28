@@ -11,7 +11,7 @@ help:
 	@echo "NanoReason make targets:"
 	@echo "  make install       Install the package with the serve + dev extras"
 	@echo "  make test          Run the unit test suite (no GPU needed)"
-	@echo "  make lint          Run ruff over src and tests"
+	@echo "  make lint          Run ruff over src, tests and experiments"
 	@echo "  make serve         Start the web app via the nanoreason-serve script"
 	@echo "  make docker-build  Build the CPU-only serving image ($(IMAGE))"
 	@echo "  make docker-run    Run that image on port $(PORT), results mounted read-only"
@@ -24,7 +24,7 @@ test:
 	$(PYTHON) -m unittest discover -s tests -v
 
 lint:
-	$(PYTHON) -m ruff check src tests
+	$(PYTHON) -m ruff check src tests experiments
 
 serve:
 	nanoreason-serve

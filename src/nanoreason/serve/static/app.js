@@ -278,10 +278,10 @@ function diversitySection(analysis) {
   sub.appendChild(row);
 
   const verdict = isNum(value)
-    ? (low ? '✗ below the 0.35 collapse threshold — the model is repeating itself'
-      : '✓ above the 0.35 collapse threshold')
+    ? (low ? '✗ below the ' + DIVERSITY_THRESHOLD + ' collapse threshold — the model is repeating itself'
+      : '✓ above the ' + DIVERSITY_THRESHOLD + ' collapse threshold')
     : 'no diversity score reported';
-  sub.appendChild(el('p', 'meter__cap', verdict + '  (the tick marks 0.35).'));
+  sub.appendChild(el('p', 'meter__cap', verdict + '  (the tick marks ' + DIVERSITY_THRESHOLD + ').'));
   return sub;
 }
 

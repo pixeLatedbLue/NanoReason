@@ -48,6 +48,14 @@ def analyze(text: str, gold: str | None = None) -> dict[str, Any]:
     nobody has a reference answer for; in that case ``outcome`` is null and is
     excluded from the reward total rather than being silently counted as zero,
     which would understate the total against a graded run.
+
+    The two rewards that take a gold answer want *different shapes of it*, so
+    they are deliberately given different values. ``outcome_reward`` compares
+    final answers and gets ``gold_value``, the bare number. ``process_reward``
+    scales substance by the reference solution's own step count, so it gets the
+    raw ``gold`` string with its arithmetic still in it; passing ``gold_value``
+    there would strip the equations, silently drop the floor back to the
+    constant fallback, and print a process reward the trainer never gave.
     """
     steps = [
         {"index": index, **step} for index, step in enumerate(iter_arithmetic_steps(text))
@@ -74,7 +82,7 @@ def analyze(text: str, gold: str | None = None) -> dict[str, Any]:
             outcome = 0.0
 
     fmt = format_reward(prompts, completions)[0]
-    process = process_reward(prompts, completions)[0]
+    process = process_reward(prompts, completions, answer=[gold] if gold is not None else None)[0]
     diversity = diversity_reward(prompts, completions)[0]
     total = fmt + process + diversity + (outcome or 0.0)
 

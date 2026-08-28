@@ -10,7 +10,7 @@ There's also a small web app that runs the same verifier the trainer uses, so yo
 
 ## The interesting part: I broke my own reward
 
-The whole point of the process reward is that it should be hard to cheat. So rather than assume it was, I wrote a script that tries eight different ways to cheat it and prints what each one scores.
+The whole point of the process reward is that it should be hard to cheat. So rather than assume it was, I wrote a script that scores eight strategies against the reward, five of them deliberate attempts to cheat it, and prints what each one earns.
 
 It found a real problem in my own design.
 
@@ -38,13 +38,24 @@ python experiments/component_validation.py
 Needs Python 3.11+.
 
 ```bash
+git clone https://github.com/<you>/nanoreason.git
+cd nanoreason
 python -m venv .venv
 source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
+pip install "torch>=2.3,<2.6" --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[serve,dev]"
 python -m unittest discover -s tests
 ```
 
-That runs 105 tests and needs no GPU.
+That runs 106 tests and needs no GPU. The torch line is what CI and the Dockerfile do: without it, pip pulls the default wheel with its bundled CUDA libraries, which is several gigabytes you don't need to run the tests.
+
+Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint`, `make serve` and `make smoke` (the CPU plumbing check that uses `configs/smoke.toml`) are the useful ones.
+
+To pin the training stack to the versions this was actually verified against, add the constraints file:
+
+```bash
+pip install -e ".[serve,dev]" -c constraints/verified.txt
+```
 
 To start the web app:
 
@@ -85,6 +96,7 @@ Three tabs:
 | `NANOREASON_RESULTS` | `results` | Where run JSON lives |
 | `NANOREASON_MODEL_READY` | unset | Set to `1` to force the real engine under `auto` |
 | `NANOREASON_CORS` | `*` | Allowed origins |
+| `NANOREASON_CONFIGS` | `configs` | Where `/api/configs` looks for the TOML configs |
 
 ### Docker
 
@@ -98,7 +110,7 @@ The image is CPU-only and boots into demo mode, so it works without a GPU. `./re
 
 Four stages.
 
-**1. Load the base model small.** Phi-3-mini in 4-bit NF4 with double quantization. Only rank-64 LoRA adapters train, so the whole thing fits on one 16 GB card.
+**1. Load the base model small.** Phi-3-mini in 4-bit NF4 with double quantization. Only LoRA adapters train, rank 64 on the 16 GB profiles and rank 32 on the 8 GB one, so the whole thing fits on a single card.
 
 **2. Supervised warm-up.** Straight fine-tuning on chain-of-thought data first. Without this, RL starts cold and almost every sampled answer scores zero, so there's nothing to learn from. Loss is masked to the assistant's turn so the model isn't trained to parrot the prompt back.
 
@@ -136,11 +148,11 @@ Upload `notebooks/nanoreason_kaggle.ipynb`, set Accelerator to GPU and Internet 
 
 Two gotchas that cost me time: with a T4 x2 you must set `CUDA_VISIBLE_DEVICES=0`, because sharding the model across both cards breaks the loss with a device mismatch. And Kaggle's preinstalled `torchvision`/`torchaudio` are built against a different torch and will break the transformers import, so the notebook uninstalls them.
 
-Sessions cap out around 9-12 hours. Checkpoints land in `artifacts/grpo/` as it goes, and "Save Version → Save & Run All" gets you the longer budget for an unattended run.
+Sessions cap out around 9-12 hours. Checkpoints land in `/kaggle/working/artifacts/grpo/` as it goes, and "Save Version → Save & Run All" gets you the longer budget for an unattended run.
 
 ### 8 GB laptop GPU
 
-It fits, but it's tight. Phi-3-mini in 4-bit is about 2.2 GB; the rest goes on activations and, during RL, the KV cache for every sampled answer. The config already sets gradient checkpointing, an 8-bit paged optimizer, batch size 1, shorter sequences and `num_generations = 2`.
+It fits, but it's tight. Phi-3-mini in 4-bit is about 2.2 GB; the rest goes on activations and, during RL, the KV cache for every sampled answer. The config already sets gradient checkpointing, an 8-bit paged optimizer, batch size 1, shorter sequences, `lora_r = 32` and `num_generations = 2`.
 
 If you still hit OOM, lower in this order: `max_completion_length` (256 → 192 → 128), then `max_prompt_length`, then turn off `forgetting_check`. Keep `num_generations` at 2, since GRPO needs a group. Setting `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` helps with fragmentation. Closing your browser genuinely helps too; the display eats VRAM.
 
@@ -170,7 +182,7 @@ python -m nanoreason.export --config configs/default.toml \
 
 Every run writes a JSON file recording accuracy, the seed, the exact package versions, the prompting conditions, and a per-item correctness list.
 
-That last field matters more than it looks. Because both runs are scored on the identical seeded subset, it lets you run a paired significance test rather than eyeballing two accuracy numbers. On 300 items, a +5 point improvement is roughly the smallest thing you can actually distinguish from noise. Anything below that is not evidence, however it's presented, so `compare_results` reports Wilson confidence intervals and an exact McNemar test alongside the delta.
+That last field matters more than it looks. Because both runs are scored on the identical seeded subset, it lets you run a paired significance test rather than eyeballing two accuracy numbers. On 300 items, assuming the candidate also trades away about 15 items the baseline got right, a +5 point improvement is roughly the smallest thing you can actually distinguish from noise. That comes from E4 in the reward audit, and it moves if you change either number, so it is a rule of thumb for a 300-item run and not a universal threshold. The default config evaluates GSM8K on the full 1319-item test split. Anything below the resolvable delta is not evidence, however it's presented, so `compare_results` reports Wilson confidence intervals and an exact McNemar test alongside it.
 
 A few rules I hold myself to here:
 
@@ -189,18 +201,22 @@ src/nanoreason/           the package
   train_grpo.py           stage 3
   export.py               stage 4
   evaluate.py             benchmark harness
+  compare_results.py      baseline vs candidate, with the stats
   serve/                  FastAPI app and the browser UI
 configs/                  four hardware profiles
+results/                  evaluation run JSON, read by the Runs tab
+constraints/              the versions this was verified against
 experiments/              the reward audit
 notebooks/                Kaggle notebook
-tests/                    105 tests, no GPU needed
+tests/                    106 tests, no GPU needed
+Makefile                  make help lists the shortcuts
 ```
 
 ## Known limitations
 
 - **No training run yet.** Everything here is verified at the component level. Whether the pipeline actually improves reasoning is untested.
 - The verifier only handles binary arithmetic on plain numbers. That covers GSM8K well and not much else, so StrategyQA and MMLU get outcome and format signal but no step-level checking.
-- The reward audit covers eight attacks I thought of. A model under optimisation pressure searches a much bigger space.
+- The reward audit covers five attacks I thought of. A model under optimisation pressure searches a much bigger space.
 - StrategyQA is evaluated on its train split, since the source used here doesn't expose a standard held-out one. That should be fixed before making benchmark claims.
 - The adaptive substance floor assumes the reference solution's step count is a fair measure of the work required. GSM8K rationales are written to be pedagogical and may over-decompose, which slightly penalises a shorter valid route.
 
