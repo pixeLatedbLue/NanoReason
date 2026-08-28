@@ -47,9 +47,9 @@ pip install -e ".[serve,dev]"
 python -m unittest discover -s tests
 ```
 
-That runs 106 tests and needs no GPU. The torch line is what CI and the Dockerfile do: without it, pip pulls the default wheel with its bundled CUDA libraries, which is several gigabytes you don't need to run the tests.
+That runs 106 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
 
-Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint`, `make serve` and `make smoke` (the CPU plumbing check that uses `configs/smoke.toml`) are the useful ones.
+Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint` and `make serve` are the quick ones. `make smoke` runs the CPU plumbing check from `configs/smoke.toml`, which downloads the base model first, so it isn't instant.
 
 To pin the training stack to the versions this was actually verified against, add the constraints file:
 
