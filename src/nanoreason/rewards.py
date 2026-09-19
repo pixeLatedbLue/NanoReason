@@ -43,7 +43,7 @@ def _completion_text(completion) -> str:
     return str(completion)
 
 
-def outcome_reward(prompts, completions, answer, **kwargs):
+def outcome_reward(prompts, completions, answer, **kwargs) -> list[float]:
     """+2.0 when the extracted final answer matches the gold answer."""
     rewards = []
     for completion, gold in zip(completions, answer):
@@ -71,7 +71,7 @@ def reference_steps(answer) -> int | None:
     return total or None
 
 
-def process_reward(prompts, completions, answer=None, **kwargs):
+def process_reward(prompts, completions, answer=None, **kwargs) -> list[float]:
     """Dense step-level signal based on verified arithmetic.
 
     Base score = ``correct_fraction - 0.5 * wrong_fraction`` over the *unique*
@@ -115,7 +115,7 @@ def process_reward(prompts, completions, answer=None, **kwargs):
     return rewards
 
 
-def format_reward(prompts, completions, **kwargs):
+def format_reward(prompts, completions, **kwargs) -> list[float]:
     """+0.5 when the response ends with the required ``#### <number>`` marker.
 
     Trailing sentence punctuation after the number is tolerated ("#### 42.")
@@ -126,7 +126,7 @@ def format_reward(prompts, completions, **kwargs):
     return [0.5 if pattern.search(_completion_text(c).strip()) else 0.0 for c in completions]
 
 
-def diversity_reward(prompts, completions, min_ratio: float = 0.35, **kwargs):
+def diversity_reward(prompts, completions, min_ratio: float = 0.35, **kwargs) -> list[float]:
     """Entropy-style anti-collapse term.
 
     Penalises degenerate repetition (unique-token ratio below ``min_ratio``)

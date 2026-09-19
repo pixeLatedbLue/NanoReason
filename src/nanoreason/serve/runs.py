@@ -18,7 +18,7 @@ from typing import Any
 
 from ..compare_results import per_item_by_task
 from ..config import load_config
-from ..stats import paired_comparison, wilson_interval
+from ..stats import accuracy, paired_comparison, wilson_interval
 
 _EXCLUDED = {"forgetting_probe.json"}
 
@@ -57,13 +57,11 @@ def _task_stat(entry: Any) -> dict[str, Any] | None:
     if not isinstance(entry, dict):
         return None
     try:
-        return {
-            "accuracy": float(entry.get("accuracy", 0.0)),
-            "correct": int(entry.get("correct", 0)),
-            "total": int(entry.get("total", 0)),
-        }
+        correct = int(entry.get("correct", 0))
+        total = int(entry.get("total", 0))
     except (TypeError, ValueError):
         return None
+    return {"accuracy": accuracy(correct, total), "correct": correct, "total": total}
 
 
 def _summarise(name: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -159,7 +157,7 @@ def _stat(entry: dict[str, Any] | None) -> dict[str, Any] | None:
     total = int(entry.get("total", 0))
     low, high = wilson_interval(correct, total)
     return {
-        "accuracy": float(entry.get("accuracy", 0.0)),
+        "accuracy": accuracy(correct, total),
         "correct": correct,
         "total": total,
         "ci_low": low,

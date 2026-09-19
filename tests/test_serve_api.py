@@ -326,6 +326,49 @@ class ServeDegradationTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {"NANOREASON_RESULTS": ""}):
             self.assertEqual(runs_mod.runs_dir(), Path("results"))
 
+    def test_compare_point_estimate_never_leaves_its_own_interval(self):
+        """A run artifact carries accuracy AND correct/total, two sources for
+        one quantity. If they disagree, the interval is computed from one and
+        the displayed point from the other, and the UI prints an accuracy that
+        sits outside its own confidence bounds. Only correct/total can be
+        trusted to agree with the interval built from it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            corrupt = _run_payload("baseline", 0.90, 1, 100)
+            (tmp_path / "baseline.json").write_text(json.dumps(corrupt), encoding="utf-8")
+            (tmp_path / "cand.json").write_text(
+                json.dumps(_run_payload("cand", 0.50, 50, 100)), encoding="utf-8"
+            )
+            with mock.patch.dict(os.environ, {"NANOREASON_RESULTS": str(tmp_path)}):
+                row = self.client.get("/api/compare?baseline=baseline&candidate=cand").json()["rows"][0]
+
+        stat = row["baseline"]
+        self.assertAlmostEqual(stat["accuracy"], 0.01, places=9)
+        self.assertLessEqual(stat["ci_low"], stat["accuracy"])
+        self.assertGreaterEqual(stat["ci_high"], stat["accuracy"])
+
+    def test_runs_and_compare_report_the_same_accuracy_for_the_same_run(self):
+        """Two endpoints, one artifact, one number. If the Runs table trusted
+        the recorded accuracy while Compare derived it, a user could read 0.90
+        on one tab and 0.01 on the next for the very same file."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            corrupt = _run_payload("baseline", 0.90, 1, 100)
+            (tmp_path / "baseline.json").write_text(json.dumps(corrupt), encoding="utf-8")
+            (tmp_path / "cand.json").write_text(
+                json.dumps(_run_payload("cand", 0.50, 50, 100)), encoding="utf-8"
+            )
+            with mock.patch.dict(os.environ, {"NANOREASON_RESULTS": str(tmp_path)}):
+                listed = self.client.get("/api/runs").json()["runs"]
+                compared = self.client.get(
+                    "/api/compare?baseline=baseline&candidate=cand"
+                ).json()["rows"][0]
+
+        from_runs = next(r for r in listed if r["name"] == "baseline")["tasks"]["gsm8k"]["accuracy"]
+        from_compare = compared["baseline"]["accuracy"]
+        self.assertAlmostEqual(from_runs, from_compare, places=9)
+        self.assertAlmostEqual(from_runs, 0.01, places=9)
+
 
 class ServeConfigsTests(unittest.TestCase):
     def setUp(self):

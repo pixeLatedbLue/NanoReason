@@ -18,7 +18,12 @@ from pathlib import Path
 
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
+)
 
 from .config import load_config
 from .modeling import load_tokenizer, torch_dtype
@@ -41,7 +46,9 @@ def merge_adapter(base_model: str, adapter: str, merged_dir: str, dtype: str = "
     return merged_dir
 
 
-def load_for_inference(merged_dir: str, load_4bit: bool, dtype: str = "float16"):
+def load_for_inference(
+    merged_dir: str, load_4bit: bool, dtype: str = "float16"
+) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
     """Load the merged model, optionally quantized to 4-bit NF4 for inference."""
     quant = None
     if load_4bit:

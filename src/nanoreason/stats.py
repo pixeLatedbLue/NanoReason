@@ -103,3 +103,14 @@ def paired_comparison(
         "p_value": p_value,
         "significant": p_value < 0.05,
     }
+
+
+def accuracy(correct: int, total: int) -> float:
+    """Accuracy from the tallied counts, or 0.0 when nothing was scored.
+
+    Evaluation artifacts also carry a pre-computed accuracy field, but the
+    counts are the primary record: they are what the evaluator tallied, and the
+    interval beside every accuracy is built from them. Deriving the point
+    estimate from the same counts is what keeps the two from disagreeing.
+    """
+    return correct / total if total else 0.0

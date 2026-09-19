@@ -293,6 +293,81 @@ class TransformersEngineTests(unittest.TestCase):
         self.assertIsNone(info.model)
         self.assertFalse(info.is_demo)
 
+    def test_concurrent_first_requests_load_the_model_once(self):
+        """FastAPI runs plain handlers in a threadpool, so the first burst of
+        requests can all find the engine unloaded at the same moment. Each one
+        that proceeds to load pulls several gigabytes; only one may."""
+        import threading
+        import time
+
+        calls = []
+
+        def slow_load(model_cfg, adapter=None):
+            calls.append(threading.get_ident())
+            time.sleep(0.05)
+            return object(), mock.MagicMock()
+
+        engine = TransformersEngine(str(ROOT / "configs" / "default.toml"))
+        with mock.patch("nanoreason.modeling.load_causal_lm", side_effect=slow_load):
+            threads = [threading.Thread(target=engine._ensure_loaded) for _ in range(8)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        self.assertEqual(len(calls), 1, f"model loaded {len(calls)} times across 8 threads")
+        self.assertIsNotNone(engine._model)
+
+    def test_closing_the_stream_early_stops_generation(self):
+        """A browser tab closed mid-answer must not leave the GPU decoding the
+        remaining hundreds of tokens for nobody. Starlette closes the generator
+        on disconnect; that close has to reach ``model.generate``."""
+        import time
+
+        import torch
+
+        produced = []
+
+        class FakeInputs(dict):
+            def to(self, device):
+                return self
+
+        class FakeTokenizer:
+            eos_token_id = 0
+
+            def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+                return "prompt"
+
+            def __call__(self, text, return_tensors="pt"):
+                return FakeInputs(input_ids=torch.tensor([[1, 2, 3]]))
+
+            def decode(self, ids, **kwargs):
+                return "x" * len(ids)
+
+        class FakeModel:
+            device = "cpu"
+
+            def generate(self, input_ids, max_new_tokens, streamer, stopping_criteria=None, **kw):
+                for step in range(max_new_tokens):
+                    if stopping_criteria is not None and stopping_criteria(input_ids, None).all():
+                        break
+                    produced.append(step)
+                    streamer.put(torch.tensor([[step + 1]]))
+                    time.sleep(0.002)
+                streamer.end()
+
+        engine = TransformersEngine(str(ROOT / "configs" / "default.toml"))
+        engine._tokenizer, engine._model = FakeTokenizer(), FakeModel()
+
+        stream = engine.stream("q", max_new_tokens=400)
+        next(stream)
+        stream.close()
+        time.sleep(0.1)
+
+        self.assertLess(
+            len(produced), 20, f"generated {len(produced)} tokens after the client left"
+        )
+
 
 class EngineSelectionTests(unittest.TestCase):
     ENV_KEYS = (

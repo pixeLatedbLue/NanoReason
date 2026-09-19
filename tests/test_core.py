@@ -293,7 +293,12 @@ class DataTests(unittest.TestCase):
 class CompareResultsTests(unittest.TestCase):
     @staticmethod
     def _payload(summary):
-        summary_block = {task: {"accuracy": acc, "correct": 0, "total": 0} for task, acc in summary.items()}
+        """An artifact shaped like the evaluator writes: accuracy is the ratio
+        of the counts, never a free-standing number."""
+        summary_block = {
+            task: {"accuracy": acc, "correct": round(acc * 100), "total": 100}
+            for task, acc in summary.items()
+        }
         return {"summary": summary_block}
 
     def _run_main(self, argv):
@@ -331,6 +336,22 @@ class CompareResultsTests(unittest.TestCase):
             )
         self.assertIn("passes_plus_2pt", out)
         self.assertIn("gsm8k,0.4000,0.4300,0.0300,True", out)
+
+    def test_accuracy_comes_from_the_counts_not_the_recorded_field(self):
+        """The artifact stores accuracy alongside correct/total, and the CLI's
+        --ci interval is built from the counts. If the two ever disagree, the
+        counts are the primary record: they are what the evaluator tallied, and
+        the accuracy field is only a derived convenience that a hand-edited or
+        half-written file can carry stale."""
+        corrupt = {"summary": {"gsm8k": {"accuracy": 0.90, "correct": 1, "total": 100}}}
+        honest = {"summary": {"gsm8k": {"accuracy": 0.50, "correct": 50, "total": 100}}}
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "base.json"
+            cand = Path(tmp) / "cand.json"
+            base.write_text(json.dumps(corrupt), encoding="utf-8")
+            cand.write_text(json.dumps(honest), encoding="utf-8")
+            out = self._run_main(["--baseline", str(base), "--candidate", str(cand)])
+        self.assertIn("gsm8k,0.0100,0.5000,0.4900,True", out)
 
 
 @unittest.skipUnless(HAS_TRL and HAS_TORCH, "trl/torch not installed")

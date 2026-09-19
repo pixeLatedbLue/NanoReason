@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -144,6 +145,28 @@ class DemoEngine(ReasoningEngine):
             yield chunk
 
 
+class _CancelSignal:
+    """A stopping criterion that flips when the consumer walks away.
+
+    Duck-typed against ``transformers.StoppingCriteria`` so this module can stay
+    free of a top-level transformers import; ``StoppingCriteriaList`` only calls
+    its members, it never isinstance-checks them.
+    """
+
+    def __init__(self) -> None:
+        self._event = threading.Event()
+
+    def set(self) -> None:
+        self._event.set()
+
+    def __call__(self, input_ids, scores, **kwargs):
+        import torch
+
+        return torch.full(
+            (input_ids.shape[0],), self._event.is_set(), dtype=torch.bool, device=input_ids.device
+        )
+
+
 class TransformersEngine(ReasoningEngine):
     """Real greedy decoding from the base model plus an optional adapter.
 
@@ -164,6 +187,7 @@ class TransformersEngine(ReasoningEngine):
         self._config = None
         self._tokenizer = None
         self._model = None
+        self._load_lock = threading.Lock()
 
     def _settings(self):
         """The parsed TOML, read at most once. Cheap: no weights are involved."""
@@ -176,11 +200,14 @@ class TransformersEngine(ReasoningEngine):
     def _ensure_loaded(self) -> None:
         if self._model is not None:
             return
-        from ..modeling import load_causal_lm
+        with self._load_lock:
+            if self._model is not None:
+                return
+            from ..modeling import load_causal_lm
 
-        self._tokenizer, self._model = load_causal_lm(
-            self._settings().model, adapter=self.adapter
-        )
+            self._tokenizer, self._model = load_causal_lm(
+                self._settings().model, adapter=self.adapter
+            )
 
     def info(self) -> EngineInfo:
         if self._model is not None:
@@ -206,7 +233,7 @@ class TransformersEngine(ReasoningEngine):
         from threading import Thread
 
         import torch
-        from transformers import TextIteratorStreamer
+        from transformers import StoppingCriteriaList, TextIteratorStreamer
 
         from ..prompts import gsm8k_prompt
 
@@ -215,6 +242,7 @@ class TransformersEngine(ReasoningEngine):
         prompt = gsm8k_prompt(tokenizer, question, few_shot=self.few_shot)
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+        cancel = _CancelSignal()
 
         def _generate() -> None:
             with torch.no_grad():
@@ -224,6 +252,7 @@ class TransformersEngine(ReasoningEngine):
                     do_sample=False,
                     pad_token_id=tokenizer.eos_token_id,
                     streamer=streamer,
+                    stopping_criteria=StoppingCriteriaList([cancel]),
                 )
 
         thread = Thread(target=_generate, daemon=True)
@@ -231,7 +260,8 @@ class TransformersEngine(ReasoningEngine):
         try:
             yield from streamer
         finally:
-            thread.join(timeout=1.0)
+            cancel.set()
+            thread.join(timeout=5.0)
 
 
 _ENGINE: ReasoningEngine | None = None

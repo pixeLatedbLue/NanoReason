@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import inspect
 import random
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -15,6 +16,9 @@ from .config import load_config
 from .data import load_combined_training
 from .modeling import load_tokenizer, quantization_config, torch_dtype
 from .prompts import GSM8K_SYSTEM, chat_prompt
+
+if TYPE_CHECKING:
+    from trl import DataCollatorForCompletionOnlyLM
 
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
@@ -36,7 +40,9 @@ def format_example(tokenizer, example: dict) -> dict[str, str]:
     return {"text": chat_prompt(tokenizer, messages, add_generation_prompt=False)}
 
 
-def build_completion_collator(tokenizer, response_template: str):
+def build_completion_collator(
+    tokenizer, response_template: str
+) -> DataCollatorForCompletionOnlyLM:
     """Collator that masks the loss on everything before the assistant turn.
 
     Ensures SFT trains only on the reasoning + answer tokens, matching the

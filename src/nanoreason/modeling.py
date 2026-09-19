@@ -7,7 +7,13 @@ from pathlib import Path
 
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
+)
 
 from .config import ModelConfig
 
@@ -21,7 +27,7 @@ DTYPES = {
 }
 
 
-def torch_dtype(name: str):
+def torch_dtype(name: str) -> torch.dtype:
     try:
         return DTYPES[name.lower()]
     except KeyError as exc:
@@ -51,14 +57,16 @@ def quantization_config(config: ModelConfig) -> BitsAndBytesConfig | None:
     )
 
 
-def load_tokenizer(path_or_model: str):
+def load_tokenizer(path_or_model: str) -> PreTrainedTokenizerBase:
     tokenizer = AutoTokenizer.from_pretrained(path_or_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
 
-def load_causal_lm(config: ModelConfig, *, adapter: str | None = None, merge_adapter: bool = False):
+def load_causal_lm(
+    config: ModelConfig, *, adapter: str | None = None, merge_adapter: bool = False
+) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
     tokenizer_source = adapter if adapter else config.base_model
     tokenizer = load_tokenizer(tokenizer_source)
     model = AutoModelForCausalLM.from_pretrained(

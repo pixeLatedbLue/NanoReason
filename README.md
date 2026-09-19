@@ -47,7 +47,7 @@ pip install -e ".[serve,dev]"
 python -m unittest discover -s tests
 ```
 
-That runs 106 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
+That runs 135 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
 
 Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint` and `make serve` are the quick ones. `make smoke` runs the CPU plumbing check from `configs/smoke.toml`, which downloads the base model first, so it isn't instant.
 
@@ -208,7 +208,7 @@ results/                  evaluation run JSON, read by the Runs tab
 constraints/              the versions this was verified against
 experiments/              the reward audit
 notebooks/                Kaggle notebook
-tests/                    106 tests, no GPU needed
+tests/                    135 tests, no GPU needed
 Makefile                  make help lists the shortcuts
 ```
 

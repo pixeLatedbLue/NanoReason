@@ -5,7 +5,18 @@ import json
 import sys
 from pathlib import Path
 
-from .stats import paired_comparison, wilson_interval
+from .stats import accuracy, paired_comparison, wilson_interval
+
+
+def _accuracy_of(stat: dict) -> float | None:
+    """Accuracy for one task entry, or ``None`` when the task is absent.
+
+    Derived from the counts rather than read from the recorded field, so the
+    number in this column can never disagree with the interval built beside it.
+    """
+    if not stat:
+        return None
+    return accuracy(int(stat.get("correct", 0)), int(stat.get("total", 0)))
 
 
 def load_payload(path: str | Path) -> dict:
@@ -80,8 +91,8 @@ def main() -> None:
     for task in sorted(set(baseline) | set(candidate)):
         base_stat = baseline.get(task, {})
         cand_stat = candidate.get(task, {})
-        base_acc = base_stat.get("accuracy")
-        cand_acc = cand_stat.get("accuracy")
+        base_acc = _accuracy_of(base_stat)
+        cand_acc = _accuracy_of(cand_stat)
         if base_acc is None or cand_acc is None:
             base_s = "NA" if base_acc is None else f"{base_acc:.4f}"
             cand_s = "NA" if cand_acc is None else f"{cand_acc:.4f}"
