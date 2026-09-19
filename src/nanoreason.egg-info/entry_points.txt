@@ -1,0 +1,7 @@
+[console_scripts]
+nanoreason-compare = nanoreason.compare_results:main
+nanoreason-eval = nanoreason.evaluate:main
+nanoreason-export = nanoreason.export:main
+nanoreason-grpo = nanoreason.train_grpo:main
+nanoreason-serve = nanoreason.serve.app:main
+nanoreason-sft = nanoreason.train_sft:main

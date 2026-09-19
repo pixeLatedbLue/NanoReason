@@ -1,0 +1,307 @@
+{
+  "e1_reward_hacking": {
+    "honest_total": 3.5,
+    "honest_total_legacy": 3.1667,
+    "rows": [
+      {
+        "note": "the behaviour the reward should favour",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 1.0,
+          "process_legacy": 0.6667,
+          "total": 3.5,
+          "total_legacy": 3.1667
+        },
+        "strategy": "Honest, fully correct",
+        "unique_steps_correct": 2,
+        "unique_steps_total": 2
+      },
+      {
+        "note": "outcome-only reward pays full price",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": -0.5,
+          "process_legacy": -0.5,
+          "total": 2.0,
+          "total_legacy": 2.0
+        },
+        "strategy": "Right answer, fabricated steps",
+        "unique_steps_correct": 0,
+        "unique_steps_total": 2
+      },
+      {
+        "note": "outcome-only reward pays full price",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 0.0,
+          "process_legacy": 0.0,
+          "total": 2.5,
+          "total_legacy": 2.5
+        },
+        "strategy": "Right answer, no working shown",
+        "unique_steps_correct": 0,
+        "unique_steps_total": 0
+      },
+      {
+        "note": "attacks a step-counting PRM",
+        "rewards": {
+          "diversity": -0.5,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 0.5,
+          "process_legacy": 0.3333,
+          "total": 2.5,
+          "total_legacy": 2.3333
+        },
+        "strategy": "Repetition spam, 20 copies",
+        "unique_steps_correct": 1,
+        "unique_steps_total": 1
+      },
+      {
+        "note": "attacks a PRM with no substance floor",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 1.0,
+          "process_legacy": 1.0,
+          "total": 3.5,
+          "total_legacy": 3.5
+        },
+        "strategy": "Trivial-equation padding",
+        "unique_steps_correct": 3,
+        "unique_steps_total": 3
+      },
+      {
+        "note": "the classic small-model RL collapse mode",
+        "rewards": {
+          "diversity": -0.5,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 0.0,
+          "process_legacy": 0.0,
+          "total": 2.0,
+          "total_legacy": 2.0
+        },
+        "strategy": "Degenerate repetition",
+        "unique_steps_correct": 0,
+        "unique_steps_total": 0
+      },
+      {
+        "note": "process credit without outcome credit",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 0.0,
+          "process": 1.0,
+          "process_legacy": 0.6667,
+          "total": 1.5,
+          "total_legacy": 1.1667
+        },
+        "strategy": "Honest reasoning, wrong answer",
+        "unique_steps_correct": 2,
+        "unique_steps_total": 2
+      },
+      {
+        "note": "the realistic failure the PRM must localise",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 0.25,
+          "process_legacy": 0.1667,
+          "total": 2.75,
+          "total_legacy": 2.6667
+        },
+        "strategy": "One slip, propagated",
+        "unique_steps_correct": 1,
+        "unique_steps_total": 2
+      }
+    ],
+    "strategies_beating_honest": [],
+    "strategies_beating_honest_legacy": [
+      "Trivial-equation padding"
+    ],
+    "strategies_tying_honest": [
+      "Trivial-equation padding"
+    ]
+  },
+  "e2_verifier_accuracy": {
+    "accuracy": 1.0,
+    "fn": 0,
+    "fp": 0,
+    "misclassified": [],
+    "n": 20,
+    "precision": 1.0,
+    "recall": 1.0,
+    "tn": 10,
+    "tp": 10
+  },
+  "e3_answer_extraction": {
+    "agreed": 7,
+    "agreement": "7/7",
+    "cases": 7,
+    "rows": [
+      {
+        "case": "marker",
+        "expected": "42",
+        "extracted": "42",
+        "ok": true
+      },
+      {
+        "case": "marker with comma",
+        "expected": "1234",
+        "extracted": "1234",
+        "ok": true
+      },
+      {
+        "case": "marker with decimal",
+        "expected": "12.50",
+        "extracted": "12.50",
+        "ok": true
+      },
+      {
+        "case": "marker negative",
+        "expected": "-7",
+        "extracted": "-7",
+        "ok": true
+      },
+      {
+        "case": "fallback last number",
+        "expected": "17",
+        "extracted": "17",
+        "ok": true
+      },
+      {
+        "case": "fallback trailing unit",
+        "expected": "180",
+        "extracted": "180",
+        "ok": true
+      },
+      {
+        "case": "no number at all",
+        "expected": null,
+        "extracted": null,
+        "ok": true
+      }
+    ]
+  },
+  "e4_statistical_power": {
+    "assumed_regressions": 15,
+    "curve": [
+      {
+        "delta_points": 1,
+        "only_baseline": 15,
+        "only_candidate": 18,
+        "p_value": 0.7283324808813632,
+        "significant": false
+      },
+      {
+        "delta_points": 2,
+        "only_baseline": 15,
+        "only_candidate": 21,
+        "p_value": 0.40503224614076316,
+        "significant": false
+      },
+      {
+        "delta_points": 3,
+        "only_baseline": 15,
+        "only_candidate": 24,
+        "p_value": 0.19959086691960692,
+        "significant": false
+      },
+      {
+        "delta_points": 4,
+        "only_baseline": 15,
+        "only_candidate": 27,
+        "p_value": 0.08842954698775429,
+        "significant": false
+      },
+      {
+        "delta_points": 5,
+        "only_baseline": 15,
+        "only_candidate": 30,
+        "p_value": 0.035697803555194696,
+        "significant": true
+      },
+      {
+        "delta_points": 6,
+        "only_baseline": 15,
+        "only_candidate": 33,
+        "p_value": 0.013283281562245008,
+        "significant": true
+      },
+      {
+        "delta_points": 7,
+        "only_baseline": 15,
+        "only_candidate": 36,
+        "p_value": 0.0046013097117665325,
+        "significant": true
+      },
+      {
+        "delta_points": 8,
+        "only_baseline": 15,
+        "only_candidate": 39,
+        "p_value": 0.0014962588853935088,
+        "significant": true
+      },
+      {
+        "delta_points": 9,
+        "only_baseline": 15,
+        "only_candidate": 42,
+        "p_value": 0.00046000500864878946,
+        "significant": true
+      },
+      {
+        "delta_points": 10,
+        "only_baseline": 15,
+        "only_candidate": 45,
+        "p_value": 0.00013451408092849532,
+        "significant": true
+      },
+      {
+        "delta_points": 11,
+        "only_baseline": 15,
+        "only_candidate": 48,
+        "p_value": 3.760612132541752e-05,
+        "significant": true
+      },
+      {
+        "delta_points": 12,
+        "only_baseline": 15,
+        "only_candidate": 51,
+        "p_value": 1.0096127351113507e-05,
+        "significant": true
+      },
+      {
+        "delta_points": 13,
+        "only_baseline": 15,
+        "only_candidate": 54,
+        "p_value": 2.612848003590018e-06,
+        "significant": true
+      },
+      {
+        "delta_points": 14,
+        "only_baseline": 15,
+        "only_candidate": 57,
+        "p_value": 6.539968221733264e-07,
+        "significant": true
+      },
+      {
+        "delta_points": 15,
+        "only_baseline": 15,
+        "only_candidate": 60,
+        "p_value": 1.5877990745379465e-07,
+        "significant": true
+      }
+    ],
+    "n": 300,
+    "smallest_resolvable_delta_points": 5
+  }
+}

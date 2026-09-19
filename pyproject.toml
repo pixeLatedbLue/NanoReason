@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanoreason"
+dynamic = ["version"]
+description = "Reproducible QLoRA, SFT, and GRPO experiments for small-model reasoning."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "accelerate>=0.34,<1.0",
+  "datasets>=2.21,<3.0",
+  "numpy>=1.26,<3.0",
+  "pandas>=2.2,<3.0",
+  "peft>=0.12,<0.14",
+  "torch>=2.3,<2.6",
+  "transformers>=4.46,<4.47",
+  "trl>=0.14,<0.15",
+]
+
+[project.optional-dependencies]
+gpu = ["bitsandbytes>=0.43,<0.45"]
+linux-gpu = ["bitsandbytes>=0.43,<0.45"]
+dev = ["ruff>=0.6,<0.8", "pytest>=8,<9", "httpx>=0.27,<1.0"]
+serve = ["fastapi>=0.115,<1.0", "uvicorn>=0.30,<1.0"]
+
+[project.scripts]
+nanoreason-eval = "nanoreason.evaluate:main"
+nanoreason-sft = "nanoreason.train_sft:main"
+nanoreason-grpo = "nanoreason.train_grpo:main"
+nanoreason-compare = "nanoreason.compare_results:main"
+nanoreason-export = "nanoreason.export:main"
+nanoreason-serve = "nanoreason.serve.app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nanoreason = ["serve/static/*", "serve/static/**/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "nanoreason.__version__"}
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]

@@ -1,0 +1,239 @@
+# NanoReason
+
+Fine-tuning a small language model (Phi-3-mini, 3.8B) to reason better at math, using QLoRA and GRPO with a reward that checks the model's working instead of just its final answer.
+
+The idea: if you only reward the right answer, a model can get there through invented arithmetic and still score full marks. So the reward here re-computes every `a op b = c` equation the model writes down. Write "5 + 7 = 99" and you lose points instead of earning them.
+
+There's also a small web app that runs the same verifier the trainer uses, so you can paste in a chain of reasoning and see exactly which steps the reward would have accepted.
+
+**Status:** the pipeline, evaluation harness and web app are done and tested. The actual training run isn't, because it needs a GPU I don't have. So there are no benchmark numbers here yet, and I'd rather leave that blank than guess.
+
+## The interesting part: I broke my own reward
+
+The whole point of the process reward is that it should be hard to cheat. So rather than assume it was, I wrote a script that scores eight strategies against the reward, five of them deliberate attempts to cheat it, and prints what each one earns.
+
+It found a real problem in my own design.
+
+To stop the model earning full credit for a single throwaway equation, I'd added a rule: you need at least 3 verified steps for full marks. Reasonable. Except an honest 2-step solution to a 2-step problem then got scaled down to 0.667, while three padded trivial equations (`1+1=2`, `2+2=4`, `3+3=6`) hit the full 1.0.
+
+| Strategy | Old reward | Fixed reward |
+|---|---:|---:|
+| Honest, fully correct | 3.167 | **3.500** |
+| Trivial-equation padding | **3.500** | 3.500 |
+| Right answer, no working shown | 2.500 | 2.500 |
+| Right answer, fabricated steps | 2.000 | 2.000 |
+
+Padding beat honest reasoning. The rule I added to prevent cheating had created a new way to cheat, and nothing in a training curve would have shown me.
+
+The fix was to stop using a fixed number. How much work a problem is worth now comes from the reference solution's own step count, which GSM8K already provides. Honest work now hits the ceiling, and padding just ties instead of winning (a tie produces no gradient under GRPO, so there's nothing pulling the model toward it).
+
+Run it yourself:
+
+```bash
+python experiments/component_validation.py
+```
+
+## Quick start
+
+Needs Python 3.11+.
+
+```bash
+git clone https://github.com/<you>/nanoreason.git
+cd nanoreason
+python -m venv .venv
+source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
+pip install "torch>=2.3,<2.6" --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[serve,dev]"
+python -m unittest discover -s tests
+```
+
+That runs 135 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
+
+Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint` and `make serve` are the quick ones. `make smoke` runs the CPU plumbing check from `configs/smoke.toml`, which downloads the base model first, so it isn't instant.
+
+To pin the training stack to the versions this was actually verified against, add the constraints file:
+
+```bash
+pip install -e ".[serve,dev]" -c constraints/verified.txt
+```
+
+To start the web app:
+
+```bash
+nanoreason-serve                   # http://127.0.0.1:8000
+```
+
+With no trained model present it runs a scripted demo engine, clearly labelled as such in the UI, so the interface works on any laptop. The verifier and all the scoring are real either way.
+
+## The web app
+
+Three tabs:
+
+- **Solve** — type a word problem, watch the answer stream in, then see every equation checked and the reward broken down.
+- **Verify** — paste any chain of reasoning and check it. No model involved at all, which is sort of the point: the process reward is just arithmetic.
+- **Runs** — reads your `results/*.json` files and compares two runs, with confidence intervals and a proper significance test.
+
+### API
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/health` | Status, and which engine is loaded |
+| `POST /api/analyze` | Verify a chain of reasoning `{text, gold}` |
+| `POST /api/solve` | Solve a question end to end |
+| `GET /api/solve/stream` | Same, streamed as server-sent events |
+| `GET /api/runs` | List evaluation runs |
+| `GET /api/runs/{name}` | One run's full JSON |
+| `GET /api/compare` | Compare two runs with intervals and a paired test |
+| `GET /api/configs` | The available experiment configs |
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `NANOREASON_ENGINE` | `auto` | `demo`, `transformers`, or `auto` |
+| `NANOREASON_CONFIG` | `configs/default.toml` | Config the real engine loads |
+| `NANOREASON_ADAPTER` | none | Trained adapter to serve |
+| `NANOREASON_RESULTS` | `results` | Where run JSON lives |
+| `NANOREASON_MODEL_READY` | unset | Set to `1` to force the real engine under `auto` |
+| `NANOREASON_CORS` | `*` | Allowed origins |
+| `NANOREASON_CONFIGS` | `configs` | Where `/api/configs` looks for the TOML configs |
+
+### Docker
+
+```bash
+docker compose up --build          # http://localhost:8000
+```
+
+The image is CPU-only and boots into demo mode, so it works without a GPU. `./results` is mounted in, so the Runs tab shows your real evaluation output. For GPU serving, rebuild the second stage on a CUDA base image.
+
+## How the training works
+
+Four stages.
+
+**1. Load the base model small.** Phi-3-mini in 4-bit NF4 with double quantization. Only LoRA adapters train, rank 64 on the 16 GB profiles and rank 32 on the 8 GB one, so the whole thing fits on a single card.
+
+**2. Supervised warm-up.** Straight fine-tuning on chain-of-thought data first. Without this, RL starts cold and almost every sampled answer scores zero, so there's nothing to learn from. Loss is masked to the assistant's turn so the model isn't trained to parrot the prompt back.
+
+**3. GRPO with the hybrid reward.** For each problem the model samples a group of answers, scores them, and moves toward the better-than-average ones. Four reward terms:
+
+- **outcome** (+2.0) — final answer matches
+- **format** (+0.5) — ends with the required `#### <number>`
+- **process** (up to +1.0, can go negative) — every equation re-computed
+- **diversity** (−0.5) — penalises the degenerate repetition small models fall into
+
+Plus a KL penalty back to the warm-up model to stop it drifting, an easy-to-hard curriculum, and a periodic probe on a held-out task to catch catastrophic forgetting.
+
+**4. Export.** Merge the adapter into the base weights and reload at 4-bit for inference.
+
+One design decision worth calling out: the step verifier is a single function, and both the training reward and the web UI call it. There's no second copy. So the green tick you see next to an equation in the browser is literally the judgement the trainer made about it. If I'd written the display separately, it could show a step as fine that the trainer scored as wrong, and you'd never know.
+
+## Running it on a GPU
+
+You need an NVIDIA card. Not Linux specifically, just CUDA and `bitsandbytes`.
+
+```bash
+pip install -e ".[gpu,dev]"
+```
+
+| Hardware | Config |
+|---|---|
+| Kaggle T4 / P100 (16 GB) | `configs/kaggle_t4.toml` |
+| Laptop 8 GB (e.g. RTX 4060) | `configs/rtx4060_8gb.toml` |
+| A100 or similar, full benchmarks | `configs/default.toml` |
+| CPU, plumbing check only | `configs/smoke.toml` |
+
+### Kaggle (easiest free option)
+
+Upload `notebooks/nanoreason_kaggle.ipynb`, set Accelerator to GPU and Internet to On (needs a phone-verified account), and run the cells. Everything writes to `/kaggle/working` so it survives the session.
+
+Two gotchas that cost me time: with a T4 x2 you must set `CUDA_VISIBLE_DEVICES=0`, because sharding the model across both cards breaks the loss with a device mismatch. And Kaggle's preinstalled `torchvision`/`torchaudio` are built against a different torch and will break the transformers import, so the notebook uninstalls them.
+
+Sessions cap out around 9-12 hours. Checkpoints land in `/kaggle/working/artifacts/grpo/` as it goes, and "Save Version → Save & Run All" gets you the longer budget for an unattended run.
+
+### 8 GB laptop GPU
+
+It fits, but it's tight. Phi-3-mini in 4-bit is about 2.2 GB; the rest goes on activations and, during RL, the KV cache for every sampled answer. The config already sets gradient checkpointing, an 8-bit paged optimizer, batch size 1, shorter sequences, `lora_r = 32` and `num_generations = 2`.
+
+If you still hit OOM, lower in this order: `max_completion_length` (256 → 192 → 128), then `max_prompt_length`, then turn off `forgetting_check`. Keep `num_generations` at 2, since GRPO needs a group. Setting `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` helps with fragmentation. Closing your browser genuinely helps too; the display eats VRAM.
+
+### The full run
+
+```bash
+python -m nanoreason.evaluate  --config configs/default.toml --run-name baseline
+python -m nanoreason.train_sft  --config configs/default.toml
+python -m nanoreason.train_grpo --config configs/default.toml
+python -m nanoreason.evaluate  --config configs/default.toml \
+    --adapter artifacts/grpo-final --run-name grpo_final
+python -m nanoreason.compare_results \
+    --baseline results/baseline.json --candidate results/grpo_final.json --ci --paired
+python -m nanoreason.export --config configs/default.toml \
+    --adapter artifacts/grpo-final --merged-dir artifacts/merged --load-4bit \
+    --prompt "If a pen costs 3 dollars, how much for 4 pens?"
+```
+
+## Evaluation
+
+| Task | Dataset | Split |
+|---|---|---|
+| GSM8K | `gsm8k/main` | test |
+| MMLU | `cais/mmlu/all` | test |
+| StrategyQA | `tasksource/strategy-qa` | train |
+| AQuA-RAT | `aqua_rat/raw` | test |
+
+Every run writes a JSON file recording accuracy, the seed, the exact package versions, the prompting conditions, and a per-item correctness list.
+
+That last field matters more than it looks. Because both runs are scored on the identical seeded subset, it lets you run a paired significance test rather than eyeballing two accuracy numbers. On 300 items, assuming the candidate also trades away about 15 items the baseline got right, a +5 point improvement is roughly the smallest thing you can actually distinguish from noise. That comes from E4 in the reward audit, and it moves if you change either number, so it is a rule of thumb for a 300-item run and not a universal threshold. The default config evaluates GSM8K on the full 1319-item test split. Anything below the resolvable delta is not evidence, however it's presented, so `compare_results` reports Wilson confidence intervals and an exact McNemar test alongside it.
+
+A few rules I hold myself to here:
+
+- No placeholder numbers. If a run hasn't happened, the number is absent, not estimated.
+- Report which config and adapter produced a result.
+- SFT and GRPO train on GSM8K only unless you add more, so broad reasoning claims need post-training evaluation on the other benchmarks to back them up.
+
+## Layout
+
+```
+src/nanoreason/           the package
+  rewards.py              the four reward terms
+  metrics.py              answer extraction and the arithmetic verifier
+  stats.py                Wilson intervals, paired McNemar
+  train_sft.py            stage 2
+  train_grpo.py           stage 3
+  export.py               stage 4
+  evaluate.py             benchmark harness
+  compare_results.py      baseline vs candidate, with the stats
+  serve/                  FastAPI app and the browser UI
+configs/                  four hardware profiles
+results/                  evaluation run JSON, read by the Runs tab
+constraints/              the versions this was verified against
+experiments/              the reward audit
+notebooks/                Kaggle notebook
+tests/                    135 tests, no GPU needed
+Makefile                  make help lists the shortcuts
+```
+
+## Known limitations
+
+- **No training run yet.** Everything here is verified at the component level. Whether the pipeline actually improves reasoning is untested.
+- The verifier only handles binary arithmetic on plain numbers. That covers GSM8K well and not much else, so StrategyQA and MMLU get outcome and format signal but no step-level checking.
+- The reward audit covers five attacks I thought of. A model under optimisation pressure searches a much bigger space.
+- StrategyQA is evaluated on its train split, since the source used here doesn't expose a standard held-out one. That should be fixed before making benchmark claims.
+- The adaptive substance floor assumes the reference solution's step count is a fair measure of the work required. GSM8K rationales are written to be pedagogical and may over-decompose, which slightly penalises a shorter valid route.
+
+## History
+
+This started as a hackathon submission that made claims it couldn't back up. Rebuilding it meant replacing one-off scripts with a real package, moving every setting into TOML configs, deleting placeholder baseline numbers, and making evaluation write JSON artifacts that reporting has to read from. The reward went from answer-matching to the hybrid described above, SFT gained proper loss masking, and the statistical machinery was added because a raw accuracy delta on a few hundred samples wasn't going to convince anyone, including me.
+
+## Background reading
+
+The papers this is built on, roughly in the order they'd make sense to read:
+
+- LoRA (Hu et al., 2021) and QLoRA (Dettmers et al., 2023) for the efficient fine-tuning
+- InstructGPT (Ouyang et al., 2022) for the RLHF pipeline and why you need a KL penalty
+- DeepSeekMath (Shao et al., 2024) for GRPO itself
+- "Let's Verify Step by Step" (Lightman et al., 2023) and Uesato et al. (2022) for process vs outcome supervision
+- "Defining and Characterizing Reward Hacking" (Skalse et al., 2022) for why you should assume your reward is gameable
+
+## License
+
+MIT. See [LICENSE](LICENSE).
