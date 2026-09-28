@@ -59,6 +59,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(kaggle.sft.optim, "paged_adamw_8bit")
         self.assertEqual(kaggle.grpo.num_generations, 2)
         self.assertEqual(kaggle.grpo.train_split, "train[:1500]")
+        self.assertEqual(kaggle.grpo.max_completion_length, 128)
+        self.assertEqual(kaggle.grpo.save_steps, 25)
         self.assertTrue(kaggle.grpo.gradient_checkpointing)
 
         rtx = load_config(ROOT / "configs" / "rtx4060_8gb.toml")
