@@ -14,7 +14,8 @@ ANY_NUMBER_RE = re.compile(r"-?\d+(?:,\d{3})*(?:\.\d+)?")
 
 _EQ_NUM = r"-?\d+(?:,\d{3})*(?:\.\d+)?"
 EQUATION_RE = re.compile(
-    rf"(?<![\d.,eE])({_EQ_NUM})\s*([+\-*/])\s*({_EQ_NUM})\s*=\s*({_EQ_NUM})(?![\d,])"
+    rf"(?<![\w.,])({_EQ_NUM})\s*([+\-*/])\s*({_EQ_NUM})\s*=\s*"
+    rf"({_EQ_NUM})(?![\w,]|\.\d)"
 )
 
 
@@ -60,7 +61,10 @@ def numeric_equal(left: str | None, right: str | None, tolerance: float = 1e-6) 
     if left is None or right is None:
         return False
     try:
-        return math.isclose(float(left), float(right), rel_tol=tolerance, abs_tol=1e-9)
+        a, b = float(left), float(right)
+        return math.isfinite(a) and math.isfinite(b) and math.isclose(
+            a, b, rel_tol=tolerance, abs_tol=1e-9
+        )
     except ValueError:
         return False
 
@@ -79,6 +83,8 @@ def _step_result_matches(computed: float, stated_text: str, tolerance: float) ->
     3.33 is the computed value rounded to the stated number of decimals.
     """
     stated = float(stated_text.replace(",", ""))
+    if not math.isfinite(computed) or not math.isfinite(stated):
+        return False
     if math.isclose(computed, stated, rel_tol=tolerance, abs_tol=tolerance):
         return True
     if "." in stated_text:
@@ -126,6 +132,8 @@ def iter_arithmetic_steps(text: str, tolerance: float = 1e-4) -> Iterator[dict[s
             computed = None
         else:
             computed = a / b
+        if computed is not None and not math.isfinite(computed):
+            computed = None
         ok = computed is not None and _step_result_matches(computed, stated, tolerance)
         yield {
             "lhs": left,

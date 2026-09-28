@@ -13,9 +13,9 @@ def load_eval_dataset(task: EvalTaskConfig) -> "Dataset":
     from datasets import load_dataset
 
     if task.subset:
-        data = load_dataset(task.dataset, task.subset)[task.split]
+        data = load_dataset(task.dataset, task.subset, split=task.split)
     else:
-        data = load_dataset(task.dataset)[task.split]
+        data = load_dataset(task.dataset, split=task.split)
 
     if task.offset < 0:
         raise ValueError(f"Dataset offset must be non-negative, got {task.offset}")
@@ -94,12 +94,12 @@ def load_training_dataset(dataset: str, subset: str | None, split: str) -> "Data
     """Load one training source as a uniform ``{question, answer}`` dataset."""
     from datasets import load_dataset
 
+    data = load_dataset(dataset, subset, split=split) if subset else load_dataset(dataset, split=split)
+    if len(data) == 0:
+        raise ValueError(f"Training dataset is empty for {dataset}/{split}")
     if dataset in {"aqua_rat", "deepmind/aqua_rat"}:
-        raw = load_dataset(dataset, subset) if subset else load_dataset(dataset)
-        data = raw[split]
         return data.map(aqua_to_qa, remove_columns=data.column_names)
-    raw = load_dataset(dataset, subset) if subset else load_dataset(dataset)
-    return _normalise_gsm8k(raw[split])
+    return _normalise_gsm8k(data)
 
 
 def load_combined_training(

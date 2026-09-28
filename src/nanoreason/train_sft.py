@@ -20,7 +20,7 @@ from .prompts import GSM8K_SYSTEM, chat_prompt
 if TYPE_CHECKING:
     from trl import DataCollatorForCompletionOnlyLM
 
-LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+LORA_TARGETS = "all-linear"
 
 
 def set_seed(seed: int) -> None:
@@ -97,6 +97,7 @@ def _sft_trainer(**kwargs):
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run QLoRA SFT warm-up.")
     parser.add_argument("--config", default="configs/default.toml")
+    parser.add_argument("--resume-from-checkpoint", default=None)
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -128,6 +129,7 @@ def main() -> None:
         ),
     )
     model.print_trainable_parameters()
+    model.config.use_cache = False
 
     raw = load_combined_training(
         cfg.sft.dataset, cfg.sft.subset, cfg.sft.train_split, cfg.sft.extra_datasets
@@ -161,6 +163,7 @@ def main() -> None:
         optim=cfg.sft.optim,
         report_to="none",
         seed=cfg.sft.seed,
+        save_total_limit=2,
     )
 
     trainer = _sft_trainer(
@@ -171,7 +174,7 @@ def main() -> None:
         data_collator=collator,
         processing_class=tokenizer,
     )
-    trainer.train()
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     trainer.save_model(cfg.sft.final_dir)
     tokenizer.save_pretrained(cfg.sft.final_dir)
     print(f"SFT adapter saved to {cfg.sft.final_dir}")

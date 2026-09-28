@@ -6,7 +6,7 @@ The idea: if you only reward the right answer, a model can get there through inv
 
 There's also a small web app that runs the same verifier the trainer uses, so you can paste in a chain of reasoning and see exactly which steps the reward would have accepted.
 
-**Status:** the pipeline, evaluation harness and web app are done and tested. The actual training run isn't, because it needs a GPU I don't have. So there are no benchmark numbers here yet, and I'd rather leave that blank than guess.
+**Status:** the pipeline, evaluation harness and web app are done and tested. The first reportable training run is prepared as a resumable Kaggle workflow but has not completed yet, so there are no benchmark numbers here rather than guessed ones.
 
 ## The interesting part: I broke my own reward
 
@@ -38,7 +38,7 @@ python experiments/component_validation.py
 Needs Python 3.11+.
 
 ```bash
-git clone https://github.com/<you>/nanoreason.git
+git clone https://github.com/pixeLatedbLue/NanoReason.git
 cd nanoreason
 python -m venv .venv
 source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
@@ -47,7 +47,7 @@ pip install -e ".[serve,dev]"
 python -m unittest discover -s tests
 ```
 
-That runs 135 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
+That runs 138 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
 
 Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint` and `make serve` are the quick ones. `make smoke` runs the CPU plumbing check from `configs/smoke.toml`, which downloads the base model first, so it isn't instant.
 
@@ -137,18 +137,18 @@ pip install -e ".[gpu,dev]"
 
 | Hardware | Config |
 |---|---|
-| Kaggle T4 / P100 (16 GB) | `configs/kaggle_t4.toml` |
+| Kaggle T4 (16 GB) | `configs/kaggle_t4.toml` |
 | Laptop 8 GB (e.g. RTX 4060) | `configs/rtx4060_8gb.toml` |
 | A100 or similar, full benchmarks | `configs/default.toml` |
 | CPU, plumbing check only | `configs/smoke.toml` |
 
 ### Kaggle (easiest free option)
 
-Upload `notebooks/nanoreason_kaggle.ipynb`, set Accelerator to GPU and Internet to On (needs a phone-verified account), and run the cells. Everything writes to `/kaggle/working` so it survives the session.
+Upload `notebooks/nanoreason_kaggle.ipynb`, set Accelerator to GPU and Internet to On (needs a phone-verified account), and choose `sft`, `grpo`, or `evaluate` in its first code cell. Save each stage as a notebook version and attach the preceding version's output to the next session. The notebook restores adapters, results, and the latest checkpoint automatically.
 
 Two gotchas that cost me time: with a T4 x2 you must set `CUDA_VISIBLE_DEVICES=0`, because sharding the model across both cards breaks the loss with a device mismatch. And Kaggle's preinstalled `torchvision`/`torchaudio` are built against a different torch and will break the transformers import, so the notebook uninstalls them.
 
-Sessions cap out around 9-12 hours. Checkpoints land in `/kaggle/working/artifacts/grpo/` as it goes, and "Save Version → Save & Run All" gets you the longer budget for an unattended run.
+The Kaggle profile intentionally limits GRPO to 1,500 seeded GSM8K prompts, two generations, and 256 completion tokens so it can fit a free session. Checkpoints land in `/kaggle/working/artifacts/`; rerunning a stage with an earlier output attached resumes from the latest checkpoint.
 
 ### 8 GB laptop GPU
 
@@ -208,7 +208,7 @@ results/                  evaluation run JSON, read by the Runs tab
 constraints/              the versions this was verified against
 experiments/              the reward audit
 notebooks/                Kaggle notebook
-tests/                    135 tests, no GPU needed
+tests/                    138 tests, no GPU needed
 Makefile                  make help lists the shortcuts
 ```
 

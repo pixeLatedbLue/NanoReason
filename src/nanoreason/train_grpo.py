@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import inspect
+from contextlib import contextmanager
 
 from peft import PeftModel, prepare_model_for_kbit_training
 from torch.utils.data import SequentialSampler
@@ -87,12 +88,38 @@ def _grpo_config(**kwargs) -> TRLGRPOConfig:
     return TRLGRPOConfig(**kwargs)
 
 
+@contextmanager
+def _reuse_loaded_adapter(model):
+    """Let TRL 0.14 reuse a loaded adapter without copying the base model.
+
+    A PEFT policy obtains reference logits by disabling its adapter. TRL 0.14
+    selects that memory-efficient path only when ``peft_config`` is passed, but
+    its normal wrapper would nest a second adapter around an existing PeftModel.
+    This compatibility shim makes that wrapper a no-op during construction.
+    """
+    if not isinstance(model, PeftModel):
+        yield None
+        return
+    import trl.trainer.grpo_trainer as grpo_module
+
+    original = grpo_module.get_peft_model
+    grpo_module.get_peft_model = lambda loaded_model, config: loaded_model
+    try:
+        yield model.peft_config[model.active_adapter]
+    finally:
+        grpo_module.get_peft_model = original
+
+
 def _grpo_trainer(curriculum: bool, **kwargs):
     cls = CurriculumGRPOTrainer if curriculum else GRPOTrainer
     params = inspect.signature(GRPOTrainer.__init__).parameters
     if "processing_class" not in params and "processing_class" in kwargs:
         kwargs["tokenizer"] = kwargs.pop("processing_class")
-    return cls(**kwargs)
+    model = kwargs.get("model")
+    with _reuse_loaded_adapter(model) as peft_config:
+        if peft_config is not None:
+            kwargs["peft_config"] = peft_config
+        return cls(**kwargs)
 
 
 def main() -> None:
@@ -110,6 +137,7 @@ def main() -> None:
     set_seed(cfg.grpo.seed)
 
     tokenizer = load_tokenizer(cfg.grpo.sft_adapter)
+    tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(
         cfg.model.base_model,
         torch_dtype=torch_dtype(cfg.model.torch_dtype),
@@ -120,6 +148,7 @@ def main() -> None:
     if cfg.model.load_in_4bit:
         model = prepare_model_for_kbit_training(model)
     model = PeftModel.from_pretrained(model, cfg.grpo.sft_adapter, is_trainable=True)
+    model.config.use_cache = False
 
     raw = load_combined_training(cfg.grpo.dataset, cfg.grpo.subset, cfg.grpo.train_split)
     if cfg.grpo.curriculum:
@@ -153,6 +182,7 @@ def main() -> None:
         fp16=cfg.model.torch_dtype.lower() in {"fp16", "float16"},
         report_to="none",
         seed=cfg.grpo.seed,
+        save_total_limit=2,
     )
 
     callbacks = []

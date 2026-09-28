@@ -12,3 +12,8 @@ dist/
 artifacts/
 results/*.json
 *.log
+paper/
+.env
+.env.*
+!.env.example
+kaggle.json

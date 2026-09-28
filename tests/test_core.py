@@ -6,12 +6,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from nanoreason.config import load_config
-from nanoreason.data import aqua_to_qa, reasoning_difficulty
+from nanoreason.data import aqua_to_qa, load_training_dataset, reasoning_difficulty
 from nanoreason.metrics import (
     extract_final_letter,
     extract_final_number,
@@ -56,7 +57,8 @@ class ConfigTests(unittest.TestCase):
         kaggle = load_config(ROOT / "configs" / "kaggle_t4.toml")
         self.assertEqual(sorted(kaggle.evaluation.tasks), ["aqua", "gsm8k", "mmlu", "strategyqa"])
         self.assertEqual(kaggle.sft.optim, "paged_adamw_8bit")
-        self.assertEqual(kaggle.grpo.num_generations, 4)
+        self.assertEqual(kaggle.grpo.num_generations, 2)
+        self.assertEqual(kaggle.grpo.train_split, "train[:1500]")
         self.assertTrue(kaggle.grpo.gradient_checkpointing)
 
         rtx = load_config(ROOT / "configs" / "rtx4060_8gb.toml")
@@ -140,6 +142,10 @@ class MetricTests(unittest.TestCase):
         self.assertEqual(verify_arithmetic_steps("1.5e3 * 2 = 3000"), (0, 0))
         self.assertEqual(verify_arithmetic_steps("5 / 0 = 1"), (0, 1))
         self.assertEqual(verify_arithmetic_steps("5 + 7 = 12 * 2 = 24"), (1, 1))
+        self.assertEqual(verify_arithmetic_steps("1 + 1 = 2e9"), (0, 0))
+        self.assertEqual(verify_arithmetic_steps("1 + 1 = 2foo"), (0, 0))
+        self.assertEqual(verify_arithmetic_steps("x1 + 1 = 2"), (0, 0))
+        self.assertEqual(verify_arithmetic_steps("1 + 1 = 2.5"), (0, 1))
 
     def test_arithmetic_verification_accepts_honest_rounding(self):
         self.assertEqual(verify_arithmetic_steps("10 / 3 = 3.33"), (1, 1))
@@ -236,6 +242,16 @@ class RewardTests(unittest.TestCase):
 
 
 class DataTests(unittest.TestCase):
+    @unittest.skipUnless(HAS_DATASETS, "datasets not installed")
+    def test_training_loader_passes_slice_to_huggingface(self):
+        from datasets import Dataset
+
+        sample = Dataset.from_dict({"question": ["q"], "answer": ["#### 1"]})
+        with mock.patch("datasets.load_dataset", return_value=sample) as load:
+            result = load_training_dataset("gsm8k", "main", "train[:1]")
+        load.assert_called_once_with("gsm8k", "main", split="train[:1]")
+        self.assertEqual(len(result), 1)
+
     def test_reasoning_difficulty_orders_by_steps(self):
         easy = "2 + 2 = 4\n#### 4"
         hard = "1 + 1 = 2\n2 + 3 = 5\n5 * 2 = 10\n#### 10"
@@ -356,6 +372,28 @@ class CompareResultsTests(unittest.TestCase):
 
 @unittest.skipUnless(HAS_TRL and HAS_TORCH, "trl/torch not installed")
 class TrainerShimTests(unittest.TestCase):
+    def test_sft_targets_every_phi3_linear_layer(self):
+        from nanoreason.train_sft import LORA_TARGETS
+
+        self.assertEqual(LORA_TARGETS, "all-linear")
+
+    def test_grpo_reuses_loaded_adapter_for_reference_logits(self):
+        import trl.trainer.grpo_trainer as grpo_module
+
+        from nanoreason import train_grpo
+
+        class FakePeftModel:
+            active_adapter = "default"
+            peft_config = {"default": object()}
+
+        model = FakePeftModel()
+        original = grpo_module.get_peft_model
+        with mock.patch.object(train_grpo, "PeftModel", FakePeftModel):
+            with train_grpo._reuse_loaded_adapter(model) as config:
+                self.assertIs(config, model.peft_config["default"])
+                self.assertIs(grpo_module.get_peft_model(model, config), model)
+        self.assertIs(grpo_module.get_peft_model, original)
+
     def test_grpo_config_passthrough_and_loud_drop(self):
         from nanoreason.train_grpo import _grpo_config
 

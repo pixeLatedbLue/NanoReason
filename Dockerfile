@@ -11,6 +11,7 @@ RUN pip install "build>=1.2,<2.0"
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
+COPY LICENSE ./
 
 RUN python -m build --wheel --outdir /dist
 
@@ -26,6 +27,8 @@ ENV NANOREASON_ENGINE=demo
 ENV NANOREASON_RESULTS=/app/results
 
 WORKDIR /app
+
+COPY configs/ ./configs/
 
 RUN groupadd --system nanoreason \
  && useradd --system --gid nanoreason --create-home --home-dir /home/nanoreason nanoreason
