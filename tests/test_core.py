@@ -58,8 +58,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(sorted(kaggle.evaluation.tasks), ["aqua", "gsm8k", "mmlu", "strategyqa"])
         self.assertEqual(kaggle.sft.optim, "paged_adamw_8bit")
         self.assertEqual(kaggle.grpo.num_generations, 2)
-        self.assertEqual(kaggle.grpo.train_split, "train[:1500]")
-        self.assertEqual(kaggle.grpo.max_completion_length, 128)
+        self.assertEqual(kaggle.grpo.train_split, "train[:750]")
+        self.assertEqual(kaggle.grpo.max_completion_length, 96)
         self.assertEqual(kaggle.grpo.save_steps, 25)
         self.assertTrue(kaggle.grpo.gradient_checkpointing)
 

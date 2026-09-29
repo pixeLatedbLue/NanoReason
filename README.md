@@ -148,7 +148,7 @@ Upload `notebooks/nanoreason_kaggle.ipynb`, set Accelerator to GPU and Internet 
 
 Two gotchas that cost me time: with a T4 x2 you must set `CUDA_VISIBLE_DEVICES=0`, because sharding the model across both cards breaks the loss with a device mismatch. And Kaggle's preinstalled `torchvision`/`torchaudio` are built against a different torch and will break the transformers import, so the notebook uninstalls them.
 
-The Kaggle profile intentionally limits GRPO to 1,500 seeded GSM8K prompts, two generations, and 128 completion tokens so it can fit a free session. It saves every 25 optimizer steps so a long run can resume within Kaggle's session limit. Checkpoints land in `/kaggle/working/artifacts/`; rerunning a stage with an earlier output attached resumes from the latest checkpoint.
+The Kaggle profile intentionally limits GRPO to 750 seeded GSM8K prompts, two generations, and 96 completion tokens so the run completes within Kaggle's 12-hour GPU limit. It saves every 25 optimizer steps so an interrupted run can resume when its checkpoint output is available. Checkpoints land in `/kaggle/working/artifacts/`; rerunning a stage with an earlier output attached resumes from the latest checkpoint.
 
 ### 8 GB laptop GPU
 
