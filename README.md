@@ -6,7 +6,7 @@ The idea: if you only reward the right answer, a model can get there through inv
 
 There's also a small web app that runs the same verifier the trainer uses, so you can paste in a chain of reasoning and see exactly which steps the reward would have accepted.
 
-**Status:** the pipeline, evaluation harness and web app are done and tested. The first reportable training run is prepared as a resumable Kaggle workflow but has not completed yet, so there are no benchmark numbers here rather than guessed ones.
+**Current direction, 18 October 2026:** this is the original SLM fine-tuning application. The training pipeline, evaluation harness and web app are implemented, and saved SFT weights have been verified locally. The next work is to verify the original GRPO checkpoint, restore real-model serving on this code branch and complete a matched base/SFT/GRPO evaluation. No improvement over the base model is established yet. See [the current working context](docs/PROJECT_CONTEXT.md) for artifact identities and next steps.
 
 ## The interesting part: I broke my own reward
 
