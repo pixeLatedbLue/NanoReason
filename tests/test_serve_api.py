@@ -231,6 +231,7 @@ class ServeDegradationTests(unittest.TestCase):
         self.assertIn("error", types)
         self.assertEqual(types[-1], "done")
         self.assertEqual(frames[-1]["completion"], "partial ")
+        self.assertTrue(frames[-1]["failed"])
         self.assertIsNotNone(frames[-1]["analysis"])
 
     def test_stream_done_frame_carries_an_analysis_even_when_nothing_is_generated(self):
@@ -383,7 +384,7 @@ class ServeConfigsTests(unittest.TestCase):
         configs = self.client.get("/api/configs").json()["configs"]
 
         self.assertEqual(
-            [c["name"] for c in configs], ["default", "kaggle_t4", "rtx4060_8gb", "smoke"]
+            [c["name"] for c in configs], ["default", "kaggle_t4", "local_inference", "rtx4060_8gb", "smoke"]
         )
         default = next(c for c in configs if c["name"] == "default")
         self.assertEqual(default["base_model"], "microsoft/Phi-3-mini-4k-instruct")

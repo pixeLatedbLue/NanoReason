@@ -70,6 +70,7 @@ def create_app() -> FastAPI:
                 "adapter": info.adapter,
                 "device": info.device,
                 "is_demo": info.is_demo,
+                "adapter_active": info.adapter_active,
             },
             "version": __version__,
         }
@@ -105,11 +106,13 @@ def create_app() -> FastAPI:
         def frames() -> Iterator[str]:
             started = time.perf_counter()
             chunks: list[str] = []
+            failed = False
             try:
                 for chunk in engine.stream(question, max_new_tokens):
                     chunks.append(chunk)
                     yield _sse({"type": "token", "text": chunk})
             except Exception as exc:  # noqa: BLE001 - surfaced to the client, not swallowed
+                failed = True
                 yield _sse({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
             completion = "".join(chunks)
             try:
@@ -120,6 +123,7 @@ def create_app() -> FastAPI:
             yield _sse(
                 {
                     "type": "done",
+                    "failed": failed,
                     "completion": completion,
                     "analysis": analysis,
                     "latency_ms": (time.perf_counter() - started) * 1000.0,
@@ -181,7 +185,13 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--reload", action="store_true")
+    parser.add_argument("--preload", action="store_true", help="Load the model before accepting requests.")
     args = parser.parse_args()
+
+    if args.preload:
+        if args.reload:
+            parser.error("--preload cannot be combined with --reload (would load the model twice)")
+        get_engine().load()
 
     import uvicorn
 

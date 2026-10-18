@@ -72,6 +72,7 @@ class EngineModel(BaseModel):
     adapter: str | None
     device: str
     is_demo: bool
+    adapter_active: bool = False
 
 
 class HealthResponse(BaseModel):

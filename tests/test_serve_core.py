@@ -274,6 +274,24 @@ class DemoEngineTests(unittest.TestCase):
 
 
 class TransformersEngineTests(unittest.TestCase):
+    def test_generation_failure_closes_stream_and_releases_gpu_lock(self):
+        tokenizer = mock.MagicMock()
+        tokenizer.eos_token_id = 0
+        tokenizer.decode.return_value = ""
+        inputs = mock.MagicMock()
+        inputs.__getitem__.return_value.shape = (1, 3)
+        inputs.to.return_value = inputs
+        tokenizer.return_value = inputs
+        model = mock.MagicMock()
+        model.config.max_position_embeddings = 4096
+        model.generate.side_effect = RuntimeError("GPU generation failed")
+        engine = TransformersEngine()
+        engine._tokenizer, engine._model = tokenizer, model
+        with self.assertRaisesRegex(RuntimeError, "Model generation failed"):
+            list(engine.stream("test question"))
+        self.assertTrue(engine._generation_lock.acquire(blocking=False))
+        engine._generation_lock.release()
+
     def test_construction_loads_nothing(self):
         engine = TransformersEngine("configs/default.toml", adapter=None)
         self.assertIsNone(engine._model)

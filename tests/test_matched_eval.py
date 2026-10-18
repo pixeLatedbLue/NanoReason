@@ -1,0 +1,49 @@
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from nanoreason.matched_eval import atomic_json, compare_complete, prepare_sample, resume_items
+
+
+class MatchedEvaluationTests(unittest.TestCase):
+    def test_sample_is_fixed_and_source_changes_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.jsonl"
+            source.write_text("\n".join(json.dumps({"question": str(i), "answer": f"#### {i}"})
+                                       for i in range(10)), encoding="utf-8")
+            first = prepare_sample(source, root / "sample.json", 4, 42)
+            self.assertEqual(first, prepare_sample(source, root / "sample.json", 4, 42))
+            self.assertEqual(len({row["index"] for row in first["rows"]}), 4)
+            with self.assertRaisesRegex(ValueError, "Existing sample differs"):
+                prepare_sample(source, root / "sample.json", 4, 43)
+            source.write_text(source.read_text() + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Existing sample differs"):
+                prepare_sample(source, root / "sample.json", 4, 42)
+
+    def test_resume_rejects_changed_checkpoint_and_wrong_sample_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "progress.json"
+            sample = [{"index": 3}, {"index": 7}]
+            identity = {"adapter_sha256": "first"}
+            atomic_json(path, {"identity": identity, "items": sample[:1]})
+            self.assertEqual(resume_items(path, identity, sample), sample[:1])
+            with self.assertRaisesRegex(ValueError, "checkpoint changed"):
+                resume_items(path, {"adapter_sha256": "second"}, sample)
+            with self.assertRaisesRegex(ValueError, "ordered prefix"):
+                resume_items(path, identity, sample[::-1])
+
+    def test_paired_comparison_requires_matching_protocol_and_prompts(self):
+        provenance = dict.fromkeys(("sample_sha256", "protocol", "prompt_ids_sha256", "environment"), "same")
+        base = {"provenance": provenance, "results": [{"per_item": [{"index": 3, "correct": False}]}]}
+        candidate = {"provenance": dict(provenance),
+                     "results": [{"per_item": [{"index": 3, "correct": True}]}]}
+        self.assertEqual(compare_complete(base, candidate)["only_candidate"], 1)
+        candidate["provenance"]["prompt_ids_sha256"] = "different"
+        with self.assertRaisesRegex(ValueError, "prompt_ids_sha256"):
+            compare_complete(base, candidate)
+
+
+if __name__ == "__main__":
+    unittest.main()

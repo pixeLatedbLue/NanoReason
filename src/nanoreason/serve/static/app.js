@@ -95,6 +95,9 @@ async function loadHealth() {
     if (engine.is_demo) {
       badge.classList.add('badge--warn');
       badge.textContent = 'DEMO ENGINE — scripted output, not a trained model';
+    } else if (engine.device === 'unloaded') {
+      badge.classList.add('badge--warn');
+      badge.textContent = 'MODEL NOT LOADED — first answer will load the weights';
     } else {
       badge.classList.add('badge--ok');
       badge.textContent = 'LIVE ENGINE — ' + (engine.model || 'model unnamed');
@@ -103,6 +106,7 @@ async function loadHealth() {
     if (engine.kind) bits.push('kind: ' + engine.kind);
     if (engine.device) bits.push('device: ' + engine.device);
     bits.push('adapter: ' + (engine.adapter || 'none'));
+    if (engine.adapter) bits.push(engine.adapter_active ? 'adapter active' : 'adapter not loaded');
     meta.textContent = bits.join('  ·  ');
     $('#version').textContent = health && health.version ? 'v' + health.version : '';
   } catch (err) {
@@ -396,8 +400,8 @@ async function runSolve() {
           sawTerminal = true;
           if (typeof event.completion === 'string') output.textContent = event.completion;
           renderAnalysis(host, event.analysis);
-          status.textContent = isNum(event.latency_ms)
-            ? 'completed in ' + Math.round(event.latency_ms) + ' ms' : 'completed';
+          status.textContent = event.failed ? 'failed — partial output' : (isNum(event.latency_ms)
+            ? 'completed in ' + Math.round(event.latency_ms) + ' ms' : 'completed');
         } else if (event.type === 'error') {
           sawTerminal = true;
           toast('Stream error', String(event.message || 'The server reported an error frame.'));

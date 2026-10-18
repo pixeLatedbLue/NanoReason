@@ -38,10 +38,14 @@ class EngineInfo:
     adapter: str | None
     device: str
     is_demo: bool
+    adapter_active: bool = False
 
 
 class ReasoningEngine:
     """Streaming text interface shared by the real and the scripted engine."""
+
+    def load(self) -> None:
+        """Prepare the engine before serving; the scripted engine needs no setup."""
 
     def info(self) -> EngineInfo:  # pragma: no cover - overridden
         raise NotImplementedError
@@ -188,6 +192,10 @@ class TransformersEngine(ReasoningEngine):
         self._tokenizer = None
         self._model = None
         self._load_lock = threading.Lock()
+        self._generation_lock = threading.Lock()
+
+    def load(self) -> None:
+        self._ensure_loaded()
 
     def _settings(self):
         """The parsed TOML, read at most once. Cheap: no weights are involved."""
@@ -225,6 +233,9 @@ class TransformersEngine(ReasoningEngine):
             adapter=self.adapter,
             device=device,
             is_demo=False,
+            adapter_active=bool(
+                self._model is not None and self.adapter and getattr(self._model, "active_adapters", [])
+            ),
         )
 
     def stream(
@@ -241,24 +252,49 @@ class TransformersEngine(ReasoningEngine):
         tokenizer, model = self._tokenizer, self._model
         prompt = gsm8k_prompt(tokenizer, question, few_shot=self.few_shot)
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        context_limit = getattr(getattr(model, "config", None), "max_position_embeddings", 4096)
+        if inputs["input_ids"].shape[-1] + max_new_tokens > context_limit:
+            raise ValueError(
+                f"Question and requested answer exceed the model's {context_limit}-token context. "
+                "Shorten the question or lower Max new tokens."
+            )
         streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
         cancel = _CancelSignal()
+        errors: list[Exception] = []
+
+        if not self._generation_lock.acquire(timeout=30):
+            raise RuntimeError("The GPU is busy answering another question; retry when it finishes.")
 
         def _generate() -> None:
-            with torch.no_grad():
-                model.generate(
-                    **inputs,
-                    max_new_tokens=max_new_tokens,
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
-                    streamer=streamer,
-                    stopping_criteria=StoppingCriteriaList([cancel]),
-                )
+            try:
+                with torch.no_grad():
+                    model.generate(
+                        **inputs,
+                        max_new_tokens=max_new_tokens,
+                        do_sample=False,
+                        pad_token_id=tokenizer.eos_token_id,
+                        streamer=streamer,
+                        stopping_criteria=StoppingCriteriaList([cancel]),
+                    )
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                # A failed generate() never closes its streamer itself. Wake the
+                # HTTP consumer on both success and failure, and retain exclusive
+                # GPU ownership until generation actually stops after cancellation.
+                streamer.end()
+                self._generation_lock.release()
 
         thread = Thread(target=_generate, daemon=True)
-        thread.start()
+        try:
+            thread.start()
+        except Exception:
+            self._generation_lock.release()
+            raise
         try:
             yield from streamer
+            if errors:
+                raise RuntimeError(f"Model generation failed: {errors[0]}") from errors[0]
         finally:
             cancel.set()
             thread.join(timeout=5.0)

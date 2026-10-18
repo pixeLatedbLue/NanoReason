@@ -1,0 +1,294 @@
+{
+  "date": "2026-10-18",
+  "sample_sha256": "8c63edcd002d8304906b19669e34dea740fe4e6218ed8f3a55bb8f0102c963e6",
+  "source_sha256": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14",
+  "source_url": "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl",
+  "sample_indices": [
+    1309,
+    228,
+    51,
+    563,
+    501,
+    457,
+    285,
+    209,
+    1116,
+    178,
+    1209,
+    864,
+    65,
+    61,
+    191,
+    447,
+    476,
+    1034,
+    1232,
+    54,
+    1149,
+    407,
+    859,
+    451,
+    919,
+    1206,
+    569,
+    13,
+    326,
+    865,
+    696,
+    318,
+    440,
+    689,
+    189,
+    778,
+    198,
+    735,
+    704,
+    1236,
+    541,
+    88,
+    940,
+    1098,
+    255,
+    775,
+    161,
+    1130,
+    600,
+    1287,
+    1266,
+    740,
+    1182,
+    393,
+    142,
+    93,
+    466,
+    592,
+    163,
+    206,
+    928,
+    1301,
+    747,
+    333
+  ],
+  "runs": {
+    "base": {
+      "path": "artifacts/slm/evaluation/runs/base.json",
+      "sha256": "b9142087bcd2897637ca4759efc2bec15e5247dd499e1bcf83c5009d49decb09",
+      "correct": 51,
+      "total": 64,
+      "accuracy": 0.796875,
+      "diagnostics": {
+        "accuracy_ci95": [
+          0.6828613244878341,
+          0.8772669743730419
+        ],
+        "token_cap_count": 0,
+        "token_cap_rate": 0.0,
+        "marker_rate": 1.0,
+        "mean_latency_seconds": 4.77087786406355,
+        "peak_allocated_bytes": 2630389248
+      },
+      "provenance": {
+        "arm": "base",
+        "adapter": null,
+        "adapter_files_sha256": {},
+        "sample_sha256": "8c63edcd002d8304906b19669e34dea740fe4e6218ed8f3a55bb8f0102c963e6",
+        "protocol": {
+          "model": {
+            "base_model": "microsoft/Phi-3-mini-4k-instruct",
+            "revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
+            "torch_dtype": "float16",
+            "device_map": "cuda:0",
+            "load_in_4bit": true,
+            "trust_remote_code": false
+          },
+          "max_new_tokens": 512,
+          "few_shot": true,
+          "decoding": "greedy",
+          "num_beams": 1,
+          "tokenizer": "pinned base tokenizer for every arm",
+          "code_sha256": {
+            "matched_eval.py": "a3a86674a718294ea0487eacbcfd9de61a2a63c88c6194cb7502899b7e874581",
+            "prompts.py": "2f656f1dbf610a5ee4fda2f4cfa85bc7bb790b679144ad8085b410d6558190aa",
+            "modeling.py": "4757890b880dfd4a18d019059fe5fe22cc1f71718541728711fe139d77c52d3a",
+            "metrics.py": "7ce27ccf54ef70923113674a23dd97bd916ba3686e608fd9ce60bec92c90df02"
+          }
+        },
+        "environment": {
+          "python": "3.11.15",
+          "platform": "Windows",
+          "packages": {
+            "torch": "2.5.1+cu124",
+            "transformers": "4.46.3",
+            "trl": "0.14.0",
+            "peft": "0.13.2",
+            "datasets": "2.21.0",
+            "accelerate": "0.34.2",
+            "bitsandbytes": "0.45.5"
+          }
+        },
+        "prompt_ids_sha256": "17c632fadf4d3a9588e6e5f7211c79d1a4d0f3a9d4072474f2a5b0c5b262281e"
+      },
+      "mean_generated_tokens": 169.25
+    },
+    "sft": {
+      "path": "artifacts/slm/evaluation/runs/sft.json",
+      "sha256": "a319aa93563409f96330af67183726a15e35f9b060deea38264457b7a01bcec2",
+      "correct": 49,
+      "total": 64,
+      "accuracy": 0.765625,
+      "diagnostics": {
+        "accuracy_ci95": [
+          0.6486650974929234,
+          0.8525023278036498
+        ],
+        "token_cap_count": 0,
+        "token_cap_rate": 0.0,
+        "marker_rate": 1.0,
+        "mean_latency_seconds": 6.090319445313526,
+        "peak_allocated_bytes": 3041561088
+      },
+      "provenance": {
+        "arm": "sft",
+        "adapter": "C:\\Users\\naval\\OneDrive\\Desktop\\nanoreason\\artifacts\\research\\pilot\\sft-initial",
+        "adapter_files_sha256": {
+          "adapter_config.json": "f9c28efbe7f5457f9a915641e2e76a06bc96b67ef367b29c18df3596d84b8d1f",
+          "adapter_model.safetensors": "3cf54dcf0345452ff690bd71d90112979c67432f9f6275c1e77e6b722c5f6f73",
+          "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+          "special_tokens_map.json": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34",
+          "tokenizer.json": "32f2d2df94766f6ac469eab705833efac3e075725a09af8f7a2cd87134e569d7",
+          "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+          "tokenizer_config.json": "83cc1cd0a237101b3bd508a40e53a066548493525a2a49572e12fe467fd119c0"
+        },
+        "sample_sha256": "8c63edcd002d8304906b19669e34dea740fe4e6218ed8f3a55bb8f0102c963e6",
+        "protocol": {
+          "model": {
+            "base_model": "microsoft/Phi-3-mini-4k-instruct",
+            "revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
+            "torch_dtype": "float16",
+            "device_map": "cuda:0",
+            "load_in_4bit": true,
+            "trust_remote_code": false
+          },
+          "max_new_tokens": 512,
+          "few_shot": true,
+          "decoding": "greedy",
+          "num_beams": 1,
+          "tokenizer": "pinned base tokenizer for every arm",
+          "code_sha256": {
+            "matched_eval.py": "a3a86674a718294ea0487eacbcfd9de61a2a63c88c6194cb7502899b7e874581",
+            "prompts.py": "2f656f1dbf610a5ee4fda2f4cfa85bc7bb790b679144ad8085b410d6558190aa",
+            "modeling.py": "4757890b880dfd4a18d019059fe5fe22cc1f71718541728711fe139d77c52d3a",
+            "metrics.py": "7ce27ccf54ef70923113674a23dd97bd916ba3686e608fd9ce60bec92c90df02"
+          }
+        },
+        "environment": {
+          "python": "3.11.15",
+          "platform": "Windows",
+          "packages": {
+            "torch": "2.5.1+cu124",
+            "transformers": "4.46.3",
+            "trl": "0.14.0",
+            "peft": "0.13.2",
+            "datasets": "2.21.0",
+            "accelerate": "0.34.2",
+            "bitsandbytes": "0.45.5"
+          }
+        },
+        "prompt_ids_sha256": "17c632fadf4d3a9588e6e5f7211c79d1a4d0f3a9d4072474f2a5b0c5b262281e"
+      },
+      "mean_generated_tokens": 121.921875
+    },
+    "grpo": {
+      "path": "artifacts/slm/evaluation/runs/grpo.json",
+      "sha256": "65268331318c1b87ebf8860fbc573f42bb7b8507dbb18ceed6f38520d7bd746a",
+      "correct": 50,
+      "total": 64,
+      "accuracy": 0.78125,
+      "diagnostics": {
+        "accuracy_ci95": [
+          0.665669836692222,
+          0.8649780253865025
+        ],
+        "token_cap_count": 0,
+        "token_cap_rate": 0.0,
+        "marker_rate": 1.0,
+        "mean_latency_seconds": 8.893073964060022,
+        "peak_allocated_bytes": 3041561088
+      },
+      "provenance": {
+        "arm": "grpo",
+        "adapter": "C:\\Users\\naval\\OneDrive\\Desktop\\nanoreason\\artifacts\\slm\\original-grpo",
+        "adapter_files_sha256": {
+          "adapter_config.json": "b0a1954be69ffc8fb6bb719fd87a1d5f83b38fd8153ed40fd6bb724801d20063",
+          "adapter_model.safetensors": "9cdc1fa17b4263e8de9899d36471f3fe005ed7f93cc4f3b86dabb17cc1554633",
+          "added_tokens.json": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d",
+          "special_tokens_map.json": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34",
+          "tokenizer.json": "3cb815b904d82b82b25dcd90edd00e71a5ee5443472ad611bcb84f1339300647",
+          "tokenizer.model": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+          "tokenizer_config.json": "0ad161ce7bb3117a27c2addb4396ab0a451528f2661ed439be40be38c43c8bfb"
+        },
+        "sample_sha256": "8c63edcd002d8304906b19669e34dea740fe4e6218ed8f3a55bb8f0102c963e6",
+        "protocol": {
+          "model": {
+            "base_model": "microsoft/Phi-3-mini-4k-instruct",
+            "revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
+            "torch_dtype": "float16",
+            "device_map": "cuda:0",
+            "load_in_4bit": true,
+            "trust_remote_code": false
+          },
+          "max_new_tokens": 512,
+          "few_shot": true,
+          "decoding": "greedy",
+          "num_beams": 1,
+          "tokenizer": "pinned base tokenizer for every arm",
+          "code_sha256": {
+            "matched_eval.py": "a3a86674a718294ea0487eacbcfd9de61a2a63c88c6194cb7502899b7e874581",
+            "prompts.py": "2f656f1dbf610a5ee4fda2f4cfa85bc7bb790b679144ad8085b410d6558190aa",
+            "modeling.py": "4757890b880dfd4a18d019059fe5fe22cc1f71718541728711fe139d77c52d3a",
+            "metrics.py": "7ce27ccf54ef70923113674a23dd97bd916ba3686e608fd9ce60bec92c90df02"
+          }
+        },
+        "environment": {
+          "python": "3.11.15",
+          "platform": "Windows",
+          "packages": {
+            "torch": "2.5.1+cu124",
+            "transformers": "4.46.3",
+            "trl": "0.14.0",
+            "peft": "0.13.2",
+            "datasets": "2.21.0",
+            "accelerate": "0.34.2",
+            "bitsandbytes": "0.45.5"
+          }
+        },
+        "prompt_ids_sha256": "17c632fadf4d3a9588e6e5f7211c79d1a4d0f3a9d4072474f2a5b0c5b262281e"
+      },
+      "mean_generated_tokens": 125.875
+    }
+  },
+  "paired": {
+    "base-vs-sft": {
+      "n_both": 64,
+      "only_candidate": 5,
+      "only_baseline": 7,
+      "p_value": 0.7744140625,
+      "significant": false
+    },
+    "base-vs-grpo": {
+      "n_both": 64,
+      "only_candidate": 5,
+      "only_baseline": 6,
+      "p_value": 1.0,
+      "significant": false
+    },
+    "sft-vs-grpo": {
+      "n_both": 64,
+      "only_candidate": 2,
+      "only_baseline": 1,
+      "p_value": 1.0,
+      "significant": false
+    }
+  },
+  "selected_trained_demo": "grpo"
+}

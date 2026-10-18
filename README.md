@@ -6,7 +6,7 @@ The idea: if you only reward the right answer, a model can get there through inv
 
 There's also a small web app that runs the same verifier the trainer uses, so you can paste in a chain of reasoning and see exactly which steps the reward would have accepted.
 
-**Current direction, 18 October 2026:** this is the original SLM fine-tuning application. The training pipeline, evaluation harness and web app are implemented, and saved SFT weights have been verified locally. The next work is to verify the original GRPO checkpoint, restore real-model serving on this code branch and complete a matched base/SFT/GRPO evaluation. No improvement over the base model is established yet. See [the current working context](docs/PROJECT_CONTEXT.md) for artifact identities and next steps.
+**Measured status, 18 October 2026:** the original SFT and GRPO checkpoints are preserved and verified. The completed matched 64-question GSM8K comparison scored **base 51/64, SFT 49/64, GRPO 50/64**. No fine-tuning improvement is established on this small sample. The local app supports real inference with each model; the default trained demo is original GRPO. See [the measured report](docs/SLM_RESULTS.md), [runbook](docs/SLM_RUNBOOK.md), and [working context](docs/PROJECT_CONTEXT.md).
 
 ## The interesting part: I broke my own reward
 
@@ -47,7 +47,7 @@ pip install -e ".[serve,dev]"
 python -m unittest discover -s tests
 ```
 
-That runs 138 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
+That runs 143 tests and needs no GPU. The torch line is what CI and the Dockerfile do: on Linux the default PyPI wheel bundles CUDA libraries, several gigabytes you don't need to run the tests.
 
 Common tasks are wrapped in the Makefile. `make help` lists them, and `make test`, `make lint` and `make serve` are the quick ones. `make smoke` runs the CPU plumbing check from `configs/smoke.toml`, which downloads the base model first, so it isn't instant.
 
@@ -58,6 +58,13 @@ pip install -e ".[serve,dev]" -c constraints/verified.txt
 ```
 
 To start the web app:
+
+On the configured Windows laptop, use `./Start-NanoReason.ps1` to preload the
+recovered original **GRPO** adapter and serve real answers. `-Model Base`, `-Model SFT`
+and `-Model Demo` select alternatives explicitly. See [the local runbook](docs/SLM_RUNBOOK.md) for model
+locations, the matched evaluation, and reproducible commands.
+
+For a generic installation (without a configured adapter, auto mode is a labelled demo):
 
 ```bash
 nanoreason-serve                   # http://127.0.0.1:8000

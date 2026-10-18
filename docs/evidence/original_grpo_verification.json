@@ -1,0 +1,245 @@
+{
+  "verified_date": "2026-10-18",
+  "source_version": 353908945,
+  "source_url": "https://www.kaggle.com/code/pixelatedblue/nanoreason-training?scriptVersionId=353908945",
+  "files": {
+    "adapter_config.json": {
+      "path": "artifacts/slm/original-grpo/adapter_config.json",
+      "bytes": 698,
+      "sha256": "b0a1954be69ffc8fb6bb719fd87a1d5f83b38fd8153ed40fd6bb724801d20063"
+    },
+    "adapter_model.safetensors": {
+      "path": "artifacts/slm/original-grpo/adapter_model.safetensors",
+      "bytes": 402688040,
+      "sha256": "9cdc1fa17b4263e8de9899d36471f3fe005ed7f93cc4f3b86dabb17cc1554633"
+    },
+    "added_tokens.json": {
+      "path": "artifacts/slm/original-grpo/added_tokens.json",
+      "bytes": 293,
+      "sha256": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d"
+    },
+    "README.md": {
+      "path": "artifacts/slm/original-grpo/README.md",
+      "bytes": 5106,
+      "sha256": "3c4825571951410c98bd4560ad8889a80b2a84c952f122ae42c3fd0735287958"
+    },
+    "special_tokens_map.json": {
+      "path": "artifacts/slm/original-grpo/special_tokens_map.json",
+      "bytes": 569,
+      "sha256": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34"
+    },
+    "tokenizer.json": {
+      "path": "artifacts/slm/original-grpo/tokenizer.json",
+      "bytes": 3620657,
+      "sha256": "3cb815b904d82b82b25dcd90edd00e71a5ee5443472ad611bcb84f1339300647"
+    },
+    "tokenizer.model": {
+      "path": "artifacts/slm/original-grpo/tokenizer.model",
+      "bytes": 499723,
+      "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
+    },
+    "tokenizer_config.json": {
+      "path": "artifacts/slm/original-grpo/tokenizer_config.json",
+      "bytes": 3448,
+      "sha256": "0ad161ce7bb3117a27c2addb4396ab0a451528f2661ed439be40be38c43c8bfb"
+    },
+    "training_args.bin": {
+      "path": "artifacts/slm/original-grpo/training_args.bin",
+      "bytes": 5905,
+      "sha256": "badb7e10f7a89324195fe5f5f5b81bc0836ecc2a16ebdaa66029f5578830bc64"
+    },
+    "kaggle-version7-run.log": {
+      "path": "artifacts/slm/original-grpo-evidence/kaggle-version7-run.log",
+      "bytes": 60688,
+      "sha256": "897df94dd1171126d38f9f1333fa2683178491f180d8565c4abad0e6442f5ba0"
+    },
+    "trainer_state-checkpoint-93.json": {
+      "path": "artifacts/slm/original-grpo-evidence/trainer_state-checkpoint-93.json",
+      "bytes": 5039,
+      "sha256": "3ec5cc505fd64872619dfa0f199b750477de489209788585a184a6ef658f12a1"
+    }
+  },
+  "global_step": 93,
+  "max_steps": 93,
+  "epoch": 0.992,
+  "reward_records": [
+    {
+      "loss": 0.0125,
+      "grad_norm": 1.447646975517273,
+      "learning_rate": 4.46236559139785e-06,
+      "completion_length": 79.91875,
+      "rewards/outcome_reward": 1.4,
+      "rewards/format_reward": 0.353125,
+      "rewards/process_reward": 0.6874993748962879,
+      "rewards/diversity_reward": 0.0,
+      "reward": 2.4406243741512297,
+      "reward_std": 0.4360506435856223,
+      "kl": 0.3114328522235155,
+      "epoch": 0.11
+    },
+    {
+      "loss": 0.0125,
+      "grad_norm": 0.9933479428291321,
+      "learning_rate": 3.924731182795699e-06,
+      "completion_length": 77.0125,
+      "rewards/outcome_reward": 1.425,
+      "rewards/format_reward": 0.371875,
+      "rewards/process_reward": 0.7390625,
+      "rewards/diversity_reward": 0.0,
+      "reward": 2.5359375,
+      "reward_std": 0.5325397847220301,
+      "kl": 0.313415018375963,
+      "epoch": 0.21
+    },
+    {
+      "loss": 0.0127,
+      "grad_norm": 0.9923394322395325,
+      "learning_rate": 3.3870967741935484e-06,
+      "completion_length": 80.925,
+      "rewards/outcome_reward": 1.3,
+      "rewards/format_reward": 0.325,
+      "rewards/process_reward": 0.7093768753111362,
+      "rewards/diversity_reward": 0.0,
+      "reward": 2.334376872330904,
+      "reward_std": 0.6084061559289694,
+      "kl": 0.3169243510812521,
+      "epoch": 0.32
+    },
+    {
+      "loss": 0.0113,
+      "grad_norm": 0.8768913745880127,
+      "learning_rate": 2.849462365591398e-06,
+      "completion_length": 89.375,
+      "rewards/outcome_reward": 0.825,
+      "rewards/format_reward": 0.20625,
+      "rewards/process_reward": 0.5239631257951259,
+      "rewards/diversity_reward": 0.0,
+      "reward": 1.5552131228148938,
+      "reward_std": 0.6187175465747714,
+      "kl": 0.282812787219882,
+      "epoch": 0.43
+    },
+    {
+      "loss": 0.0106,
+      "grad_norm": 2.210418224334717,
+      "learning_rate": 2.3118279569892475e-06,
+      "completion_length": 92.0125,
+      "rewards/outcome_reward": 0.575,
+      "rewards/format_reward": 0.15625,
+      "rewards/process_reward": 0.5705781258642674,
+      "rewards/diversity_reward": 0.0,
+      "reward": 1.3018281176686286,
+      "reward_std": 0.6050933800637722,
+      "kl": 0.2644429249688983,
+      "epoch": 0.53
+    },
+    {
+      "loss": 0.0101,
+      "grad_norm": 1.2185661792755127,
+      "learning_rate": 1.774193548387097e-06,
+      "completion_length": 93.05625,
+      "rewards/outcome_reward": 0.5125,
+      "rewards/format_reward": 0.1375,
+      "rewards/process_reward": 0.5414118759334088,
+      "rewards/diversity_reward": 0.0,
+      "reward": 1.1914118714630604,
+      "reward_std": 0.5402746580541133,
+      "kl": 0.2518777950666845,
+      "epoch": 0.64
+    },
+    {
+      "loss": 0.0103,
+      "grad_norm": 1.3423775434494019,
+      "learning_rate": 1.2365591397849463e-06,
+      "completion_length": 93.9875,
+      "rewards/outcome_reward": 0.375,
+      "rewards/format_reward": 0.071875,
+      "rewards/process_reward": 0.4077118767425418,
+      "rewards/diversity_reward": 0.0,
+      "reward": 0.8545868726447224,
+      "reward_std": 0.3809511220082641,
+      "kl": 0.25828529363498093,
+      "epoch": 0.75
+    },
+    {
+      "loss": 0.0097,
+      "grad_norm": 1.2488312721252441,
+      "learning_rate": 6.989247311827957e-07,
+      "completion_length": 94.96875,
+      "rewards/outcome_reward": 0.15,
+      "rewards/format_reward": 0.03125,
+      "rewards/process_reward": 0.33437625169754026,
+      "rewards/diversity_reward": 0.0,
+      "reward": 0.5156262502074241,
+      "reward_std": 0.32453372674062847,
+      "kl": 0.24276195392012595,
+      "epoch": 0.85
+    },
+    {
+      "loss": 0.0096,
+      "grad_norm": 1.3840974569320679,
+      "learning_rate": 1.6129032258064518e-07,
+      "completion_length": 95.725,
+      "rewards/outcome_reward": 0.0375,
+      "rewards/format_reward": 0.0125,
+      "rewards/process_reward": 0.321451879478991,
+      "rewards/diversity_reward": 0.0,
+      "reward": 0.3714518776163459,
+      "reward_std": 0.1989665894769132,
+      "kl": 0.24091221038252114,
+      "epoch": 0.96
+    },
+    {
+      "train_runtime": 25288.3242,
+      "train_samples_per_second": 0.03,
+      "train_steps_per_second": 0.004,
+      "train_loss": 0.011000789922251496,
+      "completion_length": 96.0,
+      "rewards/outcome_reward": 0.041666666666666664,
+      "rewards/format_reward": 0.010416666666666666,
+      "rewards/process_reward": 0.27703541951874894,
+      "rewards/diversity_reward": 0.0,
+      "reward": 0.32911875533560914,
+      "reward_std": 0.16274946151922146,
+      "kl": 0.24939599384864172,
+      "epoch": 0.99
+    }
+  ],
+  "interpretation": "Training completed. Logged reward declined markedly and mean completion length reached the 96-token training cap. Truncation is a plausible contributor, not a proven causal explanation. Length was not strictly monotonic: it initially decreased before rising. Evaluate the recovered checkpoint separately under the matched 512-token protocol.",
+  "tensor_count": 256,
+  "adapter_parameter_count": 100663296,
+  "tensor_dtypes": [
+    "F32"
+  ],
+  "adapter_config": {
+    "alpha_pattern": {},
+    "auto_mapping": null,
+    "base_model_name_or_path": "microsoft/Phi-3-mini-4k-instruct",
+    "bias": "none",
+    "fan_in_fan_out": false,
+    "inference_mode": true,
+    "init_lora_weights": true,
+    "layer_replication": null,
+    "layers_pattern": null,
+    "layers_to_transform": null,
+    "loftq_config": {},
+    "lora_alpha": 128,
+    "lora_dropout": 0.05,
+    "megatron_config": null,
+    "megatron_core": "megatron.core",
+    "modules_to_save": null,
+    "peft_type": "LORA",
+    "r": 64,
+    "rank_pattern": {},
+    "revision": null,
+    "target_modules": [
+      "qkv_proj",
+      "o_proj",
+      "gate_up_proj",
+      "down_proj"
+    ],
+    "task_type": "CAUSAL_LM",
+    "use_dora": false,
+    "use_rslora": false
+  }
+}

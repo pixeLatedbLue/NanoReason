@@ -216,6 +216,14 @@ class ForgettingProbeTests(unittest.TestCase):
 
 
 class ModelingTests(unittest.TestCase):
+    def test_base_revision_is_pinned_for_model_and_tokenizer(self):
+        config = ModelConfig(revision="fixed-revision", load_in_4bit=False)
+        with mock.patch.object(modeling.AutoTokenizer, "from_pretrained") as tokenizer, \
+                mock.patch.object(modeling.AutoModelForCausalLM, "from_pretrained") as model:
+            modeling.load_causal_lm(config)
+        self.assertEqual(tokenizer.call_args.kwargs["revision"], "fixed-revision")
+        self.assertEqual(model.call_args.kwargs["revision"], "fixed-revision")
+
     def test_torch_dtype_accepts_aliases_case_insensitively(self):
         self.assertIs(modeling.torch_dtype("FP16"), torch.float16)
         self.assertIs(modeling.torch_dtype("float16"), torch.float16)

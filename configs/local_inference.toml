@@ -1,0 +1,8 @@
+# Pinned base shared by local evaluation and inference on the 8 GB RTX 4060.
+[model]
+base_model = "microsoft/Phi-3-mini-4k-instruct"
+revision = "f39ac1d28e925b323eae81227eaba4464caced4e"
+torch_dtype = "float16"
+device_map = "cuda:0"
+load_in_4bit = true
+trust_remote_code = false

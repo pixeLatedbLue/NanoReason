@@ -9,6 +9,7 @@ from typing import Any
 @dataclass
 class ModelConfig:
     base_model: str = "microsoft/Phi-3-mini-4k-instruct"
+    revision: str | None = None
     torch_dtype: str = "float16"
     device_map: str = "auto"
     load_in_4bit: bool = True

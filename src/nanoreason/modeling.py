@@ -57,8 +57,8 @@ def quantization_config(config: ModelConfig) -> BitsAndBytesConfig | None:
     )
 
 
-def load_tokenizer(path_or_model: str) -> PreTrainedTokenizerBase:
-    tokenizer = AutoTokenizer.from_pretrained(path_or_model)
+def load_tokenizer(path_or_model: str, *, revision: str | None = None) -> PreTrainedTokenizerBase:
+    tokenizer = AutoTokenizer.from_pretrained(path_or_model, revision=revision)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
@@ -68,9 +68,10 @@ def load_causal_lm(
     config: ModelConfig, *, adapter: str | None = None, merge_adapter: bool = False
 ) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
     tokenizer_source = adapter if adapter else config.base_model
-    tokenizer = load_tokenizer(tokenizer_source)
+    tokenizer = load_tokenizer(tokenizer_source, revision=None if adapter else config.revision)
     model = AutoModelForCausalLM.from_pretrained(
         config.base_model,
+        revision=config.revision,
         torch_dtype=torch_dtype(config.torch_dtype),
         quantization_config=quantization_config(config),
         device_map=config.device_map,

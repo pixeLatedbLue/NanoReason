@@ -14,6 +14,74 @@ Project statement: fine-tune Phi-3-mini (3.8B) for mathematical reasoning using
 QLoRA supervised fine-tuning followed by GRPO, evaluate its actual performance
 and provide a working local inference interface.
 
+## Active work on 18 October
+
+The user asked Codex to continue the main work while handing small, independent
+tasks to Claude. A copyable task was supplied for Claude to recover original
+GRPO from private Kaggle version 7. Claude completed recovery to
+`artifacts/slm/original-grpo` and `artifacts/slm/original-grpo-evidence`, and Codex
+independently verified all 11 recorded hashes, 256 adapter tensors and 93/93 steps.
+Codex owns evaluation, application changes, documentation and the local commit.
+
+Browser and native computer-control tools failed before opening a session with
+a runtime/volume error (Windows error 1005); no Kaggle credentials file was
+available. This is an access-tool failure, not evidence of a Kaggle training
+failure. The existing version 8 ZIP was inspected and contains no `grpo-final`.
+
+The official full GSM8K test split (1,319 rows) is now preserved under
+`artifacts/slm/data/gsm8k-test.jsonl`, SHA256
+`3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14`.
+The new `nanoreason.matched_eval` command fixes 64 questions with seed 42 before
+inference, uses the same pinned base tokenizer/prompts and 512-token cap for all
+arms, saves every completion atomically, and rejects incompatible resumed runs.
+The base run completed with **51/64 correct (79.6875%)**, no token-cap hits and
+100% answer-marker coverage. SFT completed with **49/64 correct (76.5625%)**,
+also zero token-cap hits and 100% marker coverage. Base versus SFT has 7 base-only
+correct and 5 SFT-only correct items (exact McNemar p=0.7744140625).
+Original GRPO completed with **50/64 correct (78.125%)**, zero token-cap hits and
+100% marker coverage. All 192 evaluation responses are preserved. The exact
+sample and prompt-token hashes agree across all three models. GRPO versus base
+has 5 GRPO-only correct and 6 base-only correct items (p=1); GRPO versus SFT has
+2 GRPO-only correct and 1 SFT-only correct item (p=1). No accuracy improvement
+over base was established. Results are in `artifacts/slm/evaluation/runs`, with
+full provenance and atomic per-item progress in `artifacts/slm/evaluation/progress`.
+
+`Start-NanoReason.ps1` selects SFT, GRPO, Base or explicit Demo. The default
+trained checkpoint is original GRPO, the higher-scoring trained arm on this
+small sample; this is a practical demonstration choice, not a superiority claim.
+Base remains available and had the highest observed score.
+Pure inference reliability fixes were selectively reused from the preserved
+branch: preload, serialized generation, context-length validation and propagation
+of generation-thread errors. No graph or safety functionality was imported.
+The GUI reports active adapter status and retains a failed label for partial
+failed output. The current suite passes **143 tests**, and Ruff and JavaScript
+syntax checks pass. See `docs/SLM_RUNBOOK.md` for exact commands and output paths.
+
+The user authenticated in Claude's Chrome session, enabling version 7 recovery.
+The recovered GRPO weight SHA256 is
+`9cdc1fa17b4263e8de9899d36471f3fe005ed7f93cc4f3b86dabb17cc1554633`.
+Verified evidence is in `docs/evidence/original_grpo_verification.json`. Training
+reward declined substantially while mean completion length reached the 96-token
+training cap. Truncation is a plausible contributor; the logs do not establish
+causation, and completion length was not strictly monotonic (an initial dip is
+present). The new matched evaluation uses 512 tokens for all three policies.
+
+An attempted handoff write and local commit were blocked when automatic approval
+review ran out of usage. No commit occurred, and `SLM_HANDOFF.md` was not created.
+Earlier implementation edits and evaluation artifacts survived. Work resumed,
+completed all three evaluations and passed real-model API checks. Both batch
+and streaming calls returned the expected answers (35 and 55), with health
+confirming `transformers`, `cuda:0` and `adapter_active=true`. The Runs API returned
+all three completed evaluations, and HTML/JS/CSS returned HTTP 200. Evidence is
+`docs/evidence/live_slm_app.json`. Visual browser inspection was not possible
+because the computer-control runtime failed; opening the app in Codex was requested.
+
+The app was left running at **http://127.0.0.1:8000/**. At verification, the
+hidden PowerShell launcher PID was **17248** and Uvicorn's Python PID was **5196**.
+Logs are under `artifacts/slm/live/`. Verify current command lines before stopping
+processes; IDs can be reused. Do not start another GPU evaluation while the app
+is loaded. For a foreground launch after stopping it, run `Start-NanoReason.ps1`.
+
 The later work remains preserved on `codex/proof-graph-verifier` and in ignored
 local artifacts. It was not deleted, merged into this branch or published.
 The 451-test and hardware-recovery results belong to that separate code line;
@@ -48,26 +116,27 @@ Each is 402,688,040 bytes, with Phi-3-mini as the configured base and LoRA rank 
 These files retain their historical directories to preserve provenance. The
 `local-final` adapter is not the original longer GRPO checkpoint. Historical
 records identify the original SFT/GRPO outputs in private Kaggle version 7,
-script version `353908945`; retrieve/verify that original GRPO output before
-using it as the original trained model. Remote availability has not been
-rechecked during this scope reset.
+script version `353908945`. Claude recovered original GRPO on 18 October and
+Codex verified it, as recorded above. The recovered directory is
+`artifacts/slm/original-grpo`; the later pilot adapters remain separate.
 
 The later pilot evaluated SFT and both 16-step arms on the same 64 test questions.
 All scored 49/64 (76.5625%), with no accuracy improvement measured. There is no
 base-model comparison in that pilot. These are existing limited observations,
 not the original complete base/SFT/GRPO benchmark or evidence of general gains.
 
-## Practical continuation
+## Completion and future scope
 
-1. Verify/recover the original GRPO checkpoint and its training configuration;
-   use the preserved SFT checkpoint as the known starting point meanwhile.
-2. Restore a reproducible real-model launcher for this original code branch,
-   with explicit adapter selection and a clearly labelled demo fallback.
-3. Evaluate base, SFT and the selected original GRPO adapter on the same fixed
-   test questions and decoding settings. Report accuracy, output truncation,
-   response time and memory, including a result of no improvement if observed.
-4. Fix concrete training or serving problems indicated by those checks, then
-   package the usable app, model instructions and measured comparison.
+The authorized bounded original-project comparison and real-model application
+are complete. `docs/SLM_RESULTS.md` contains measured results, paired tests,
+confidence intervals, latency, memory, training evidence and limitations.
+`docs/SLM_RUNBOOK.md` contains exact reproducible commands. Source and concise
+evidence are being committed locally on `codex/slm-finetuning`; use `git log -1`
+and `git status --short` to verify that final save.
+
+Larger held-out evaluations or revised training are optional future work and
+require a new agreed scope. Do not change the 64-question test set into training
+data or tune to these results. Do not claim the model improved over its base.
 
 Do not launch training simply because the old README says it is unfinished.
 Use the saved artifacts first. Model merging/export can be chosen when packaging
