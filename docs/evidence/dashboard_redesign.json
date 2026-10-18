@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-18",
+  "python_tests_passed": 143,
+  "browser_checks": [
+    "Initial empty state, self-hosted assets, and motion completion",
+    "Keyboard tabs and real arithmetic verification identify the deliberate mistake",
+    "Input edits invalidate stale verification and missing reference is explicit",
+    "Verification HTTP failure is recoverable",
+    "Charts match saved API measurements and paired interpretation is honest",
+    "Source artifact JSON downloads",
+    "Theme preference and tab deep link survive reload",
+    "All three screens fit 1440, 1024, 768, 390 and 320 px widths",
+    "Empty results and network failures are distinct; refresh recovers",
+    "Failed and interrupted streams retain partial output without claiming success; copy works",
+    "Reduced-motion preference disables reveal animation",
+    "One real model inference through the keyboard shortcut, streaming UI and final analysis",
+    "No uncaught browser JavaScript errors"
+  ],
+  "responsive_widths_px": [
+    1440,
+    1024,
+    768,
+    390,
+    320
+  ],
+  "accessibility": {
+    "tool": "axe-core 4.10.3",
+    "audits": [
+      {
+        "theme": "light",
+        "tab": "solve",
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "tab": "verify",
+        "violations": []
+      },
+      {
+        "theme": "light",
+        "tab": "runs",
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "tab": "solve",
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "tab": "verify",
+        "violations": []
+      },
+      {
+        "theme": "dark",
+        "tab": "runs",
+        "violations": []
+      }
+    ],
+    "scope": "Automated WCAG 2 A/AA and 2.1 AA only; not certification"
+  },
+  "live_smoke": {
+    "status": "Completed in 3.5 s",
+    "answer": "35",
+    "completion": "The shop starts with 20 apples and receives 15 more.\n20 + 15 = <<20+15=35>>35\n#### 35"
+  },
+  "model": "microsoft/Phi-3-mini-4k-instruct",
+  "adapter": "artifacts/slm/original-grpo",
+  "is_demo": false
+}

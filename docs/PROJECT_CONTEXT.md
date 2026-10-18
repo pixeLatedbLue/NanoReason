@@ -3,6 +3,31 @@
 Updated: 18 October 2026. Active branch: `codex/slm-finetuning`, based on
 original `main` commit `75f0fa7`.
 
+## Dashboard redesign completed on 18 October
+
+The user requested a full dashboard redesign using design-taste-frontend,
+gpt-taste and minimalist-ui. Solve, Verify and Runs now share a warm neutral
+workspace with self-hosted Geist, sidebar navigation, responsive layout,
+dark/light themes and reduced-motion support. Real inference and measured
+results remain connected; backend inference and evaluation code were not changed.
+
+Solve places the prompt and live response side by side, supports copying and
+Ctrl/Cmd+Enter, and shows actual model/adapter status. Verify provides a clearer
+arithmetic inspector and describes its limitations. Runs visualizes the saved
+base/SFT/GRPO accuracies and paired comparison without claiming improvement.
+Source paths remain available in expandable details and JSON downloads.
+
+Validation: 143 Python tests passed, 13 browser checks passed including real
+GRPO inference (20 + 15 -> 35 in 3.5 seconds), all screens checked at five widths
+from 320 to 1440px, and zero automated axe-core A/AA violations across three
+screens in both themes. Details: docs/DASHBOARD_DESIGN.md.
+Screenshots and browser/accessibility reports: artifacts/slm/dashboard/.
+Frontend assets and license notices are vendored; no CDN is required.
+
+The app remains running at http://127.0.0.1:8000/. Refresh the existing browser
+tab to load the new assets. No training or public push occurred. This update
+is saved locally on codex/slm-finetuning; consult git log for its commit.
+
 ## User correction and project scope
 
 The user clarified that two projects had been confused. This project is the

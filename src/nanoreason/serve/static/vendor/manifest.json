@@ -1,0 +1,22 @@
+{
+  "packages": {
+    "gsap": "3.13.0",
+    "@fontsource-variable/geist": "5.2.8",
+    "@phosphor-icons/core": "2.1.1"
+  },
+  "sha256": {
+    "arrow-clockwise.svg": "4a78a777b692cb74826e3071ae7049cc0d3927e68a7b8272e7251b1760cd771f",
+    "arrow-up-right.svg": "44db5257b360ec04863eb6daaa41f220c8b714d23fb81403517d0a30acfda9f4",
+    "caret-down.svg": "53f0cf2d0b144ac3cb07e353e0cd0853ffb3ed432d741460ce288edfcb0924b1",
+    "chart-bar.svg": "d161e503af4f5386a370ffd742d19d85e98625fd6d6eadbabbdb36d58dcca22c",
+    "checks.svg": "363e96ad74949b3240c42edcac7e63dc889c5ca6387f306aca5511faed537d22",
+    "copy.svg": "5a892fc6a72866e60c67db2088a87653cf44b57b1a5d183b36e950cdc5dd66b3",
+    "CORE-LICENSE.txt": "ddbe6082ec3cf979db47e5af549d2849c5d6182b3e005ef91ce1dbb9eb122f11",
+    "geist-latin.woff2": "0cbbe6286a00f356e98980783cc950a9b693751e04aedfb97d9526ff6dc2b316",
+    "GEIST-LICENSE.txt": "cc27b0f563500a9e0658866241d06d05ef20a9efbf8bac47fe0499a65ede5952",
+    "gsap.min.js": "96c01b81f44a3290e2b4532f55e2c9534b2adc43273a19f3756b2cb41f0fd0b6",
+    "moon.svg": "5c91f82aea4e7b53305bf29628caebc22a1198ba9fa46c62eef13fb8b3c3f21d",
+    "sparkle.svg": "9e2c17a26564098cb48dd95737a83c742156f755f13cedaa30f9d864d0e3eb76",
+    "sun.svg": "8df1c7b747774f8b2c1fe353b1b785c74aac35bfa50f2ed7d8d9a85a4191b2ac"
+  }
+}

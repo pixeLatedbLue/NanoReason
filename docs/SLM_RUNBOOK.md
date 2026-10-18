@@ -111,3 +111,16 @@ With the real GRPO app running, check its HTTP integration and regenerate the re
 Use the actual report date for subsequent runs. The integration check saves real
 batch/stream responses, health information, run listings and asset availability.
 It does not inspect browser layout or substitute for the 64-question comparison.
+
+
+## Dashboard browser validation
+
+The redesigned dashboard remains served at the same root URL. Refresh the
+browser after frontend changes. See docs/DASHBOARD_DESIGN.md for design,
+asset provenance, screenshots and browser checks. With Playwright 1.62.1
+available to Node and Chrome installed, run:
+
+    node tests/dashboard.browser.cjs
+
+Add --live only to exercise one real inference through the browser against
+the already-running model. Do not start a second GPU process for this check.
