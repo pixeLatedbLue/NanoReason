@@ -1,6 +1,6 @@
 # NanoReason: SLM fine-tuning working context
 
-Updated: 18 October 2026. Active branch: `codex/slm-finetuning`, based on
+Updated: 19 October 2026 (Asia/Calcutta). Active branch: `codex/slm-finetuning`, based on
 original `main` commit `75f0fa7`.
 
 ## Dashboard redesign completed on 18 October
@@ -24,9 +24,28 @@ screens in both themes. Details: docs/DASHBOARD_DESIGN.md.
 Screenshots and browser/accessibility reports: artifacts/slm/dashboard/.
 Frontend assets and license notices are vendored; no CDN is required.
 
-The app remains running at http://127.0.0.1:8000/. Refresh the existing browser
-tab to load the new assets. No training or public push occurred. This update
-is saved locally on codex/slm-finetuning; consult git log for its commit.
+The dashboard redesign is saved locally in commit `fd06d79`
+("Redesign SLM dashboard with responsive workspace and measured results"),
+after `ad5d6ef` (original SLM evaluation and live GRPO demo).
+No training or public push occurred during the redesign.
+
+The app was verified running at http://127.0.0.1:8000/ on 18 October. Runtime
+availability has not been rechecked on 19 October; check health before claiming
+it is still running or starting another GPU process. Refresh the existing
+browser tab after frontend changes.
+
+## Latest handoff: 19 October 2026
+
+The user's latest request was to update this context file. The full dashboard
+redesign and its validation are complete; no additional feature or training
+work was requested in this turn. The original SLM fine-tuning scope remains
+active. Preserve the existing measured results and do not resume the unrelated
+patent, proof-graph, safety-controller or hardware workstreams.
+
+At this handoff, Git shows only the two pre-existing untracked screenshots,
+`kaggle-grpo-queued.png` and `kaggle-grpo-running.png`, outside this context
+update. Leave them untouched. The validation numbers above are the completed
+18 October checks, not new test runs performed on 19 October.
 
 ## User correction and project scope
 
