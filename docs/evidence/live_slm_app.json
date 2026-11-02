@@ -1,384 +1,88 @@
 {
-  "health": {
-    "status": "ok",
-    "engine": {
-      "kind": "transformers",
-      "model": "microsoft/Phi-3-mini-4k-instruct",
-      "adapter": "C:\\Users\\naval\\OneDrive\\Desktop\\nanoreason\\artifacts\\slm\\original-grpo",
-      "device": "cuda:0",
-      "is_demo": false,
-      "adapter_active": true
+  "assets": {
+    "/": {
+      "bytes": 7734,
+      "status": 200
     },
-    "version": "0.2.0"
+    "/app.js": {
+      "bytes": 26671,
+      "status": 200
+    },
+    "/styles.css": {
+      "bytes": 12606,
+      "status": 200
+    }
   },
   "batch": {
-    "question": "A library had 29 books. It received 18 more books and then lent out 12. How many books remain?",
-    "completion": "The library had 29 books and received 18 more, so it had 29 + 18 = <<29+18=47>>47 books.\nThen it lent out 12 books, so it has 47 - 12 = <<47-12=35>>35 books remaining.\n#### 35",
     "analysis": {
       "answer": "35",
       "answer_source": "marker",
+      "correct": true,
       "format_ok": true,
+      "gold": "35",
+      "rewards": {
+        "diversity": 0.0,
+        "format": 0.5,
+        "outcome": 2.0,
+        "process": 0.6667,
+        "total": 3.1667
+      },
       "steps": [
         {
+          "computed": 47.0,
+          "duplicate": false,
           "index": 0,
           "lhs": "29",
-          "op": "+",
-          "rhs": "18",
-          "stated": "47",
-          "computed": 47.0,
           "ok": true,
+          "op": "+",
           "raw": "29 + 18 = 47",
-          "duplicate": false
+          "rhs": "18",
+          "stated": "47"
         },
         {
+          "computed": 35.0,
+          "duplicate": false,
           "index": 1,
           "lhs": "47",
-          "op": "-",
-          "rhs": "12",
-          "stated": "35",
-          "computed": 35.0,
           "ok": true,
+          "op": "-",
           "raw": "47 - 12 = 35",
-          "duplicate": false
+          "rhs": "12",
+          "stated": "35"
         }
       ],
       "steps_correct": 2,
       "steps_total": 2,
       "steps_unique": 2,
-      "token_diversity": 0.75,
-      "rewards": {
-        "outcome": 2.0,
-        "format": 0.5,
-        "process": 0.6667,
-        "diversity": 0.0,
-        "total": 3.1667
-      },
-      "gold": "35",
-      "correct": true
+      "token_diversity": 0.75
     },
+    "completion": "The library had 29 books and received 18 more, so it had 29 + 18 = <<29+18=47>>47 books.\nThen it lent out 12 books, so it has 47 - 12 = <<47-12=35>>35 books remaining.\n#### 35",
+    "engine": "transformers",
     "latency_ms": 27358.77469999832,
-    "engine": "transformers"
+    "question": "A library had 29 books. It received 18 more books and then lent out 12. How many books remain?"
   },
-  "stream_question": "A shop has 9 boxes with 7 pencils each. It gives away 8 pencils. How many pencils remain?",
-  "stream_frames": [
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "The "
-    },
-    {
-      "type": "token",
-      "text": "shop "
-    },
-    {
-      "type": "token",
-      "text": "has "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "9 "
-    },
-    {
-      "type": "token",
-      "text": "* "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "7 "
-    },
-    {
-      "type": "token",
-      "text": "= "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "<<9*7=63>>63 "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "pencils.\n"
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "After "
-    },
-    {
-      "type": "token",
-      "text": "giving "
-    },
-    {
-      "type": "token",
-      "text": "away "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "8 "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "pencils, "
-    },
-    {
-      "type": "token",
-      "text": "the "
-    },
-    {
-      "type": "token",
-      "text": "shop "
-    },
-    {
-      "type": "token",
-      "text": "has "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "63 "
-    },
-    {
-      "type": "token",
-      "text": "- "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "8 "
-    },
-    {
-      "type": "token",
-      "text": "= "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "<<63-8=55>>55 "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "pencils.\n"
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "#### "
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": ""
-    },
-    {
-      "type": "token",
-      "text": "55"
-    },
-    {
-      "type": "done",
-      "failed": false,
-      "completion": "The shop has 9 * 7 = <<9*7=63>>63 pencils.\nAfter giving away 8 pencils, the shop has 63 - 8 = <<63-8=55>>55 pencils.\n#### 55",
-      "analysis": {
-        "answer": "55",
-        "answer_source": "marker",
-        "format_ok": true,
-        "steps": [
-          {
-            "index": 0,
-            "lhs": "9",
-            "op": "*",
-            "rhs": "7",
-            "stated": "63",
-            "computed": 63.0,
-            "ok": true,
-            "raw": "9 * 7 = 63",
-            "duplicate": false
-          },
-          {
-            "index": 1,
-            "lhs": "63",
-            "op": "-",
-            "rhs": "8",
-            "stated": "55",
-            "computed": 55.0,
-            "ok": true,
-            "raw": "63 - 8 = 55",
-            "duplicate": false
-          }
-        ],
-        "steps_correct": 2,
-        "steps_total": 2,
-        "steps_unique": 2,
-        "token_diversity": 0.8,
-        "rewards": {
-          "outcome": 2.0,
-          "format": 0.5,
-          "process": 0.6667,
-          "diversity": 0.0,
-          "total": 3.1667
-        },
-        "gold": "55",
-        "correct": true
-      },
-      "latency_ms": 9001.320199982729
-    }
-  ],
+  "health": {
+    "engine": {
+      "adapter": "artifacts/slm/original-grpo",
+      "adapter_active": true,
+      "device": "cuda:0",
+      "is_demo": false,
+      "kind": "transformers",
+      "model": "microsoft/Phi-3-mini-4k-instruct"
+    },
+    "status": "ok",
+    "version": "0.2.0"
+  },
+  "note": "Two arithmetic integration checks; not a held-out benchmark.",
   "runs": {
     "runs": [
       {
+        "adapter": "artifacts/slm/original-grpo",
+        "base_model": "microsoft/Phi-3-mini-4k-instruct",
+        "config_path": "configs/local_inference.toml",
+        "created_at_unix": 1792311905,
         "name": "grpo",
         "run_name": "grpo",
-        "base_model": "microsoft/Phi-3-mini-4k-instruct",
-        "adapter": "C:\\Users\\naval\\OneDrive\\Desktop\\nanoreason\\artifacts\\slm\\original-grpo",
-        "created_at_unix": 1792311905,
-        "config_path": "configs/local_inference.toml",
         "tasks": {
           "gsm8k": {
             "accuracy": 0.78125,
@@ -388,12 +92,12 @@
         }
       },
       {
+        "adapter": "artifacts/research/pilot/sft-initial",
+        "base_model": "microsoft/Phi-3-mini-4k-instruct",
+        "config_path": "configs/local_inference.toml",
+        "created_at_unix": 1792265628,
         "name": "sft",
         "run_name": "sft",
-        "base_model": "microsoft/Phi-3-mini-4k-instruct",
-        "adapter": "C:\\Users\\naval\\OneDrive\\Desktop\\nanoreason\\artifacts\\research\\pilot\\sft-initial",
-        "created_at_unix": 1792265628,
-        "config_path": "configs/local_inference.toml",
         "tasks": {
           "gsm8k": {
             "accuracy": 0.765625,
@@ -403,12 +107,12 @@
         }
       },
       {
+        "adapter": null,
+        "base_model": "microsoft/Phi-3-mini-4k-instruct",
+        "config_path": "configs/local_inference.toml",
+        "created_at_unix": 1792265208,
         "name": "base",
         "run_name": "base",
-        "base_model": "microsoft/Phi-3-mini-4k-instruct",
-        "adapter": null,
-        "created_at_unix": 1792265208,
-        "config_path": "configs/local_inference.toml",
         "tasks": {
           "gsm8k": {
             "accuracy": 0.796875,
@@ -419,20 +123,316 @@
       }
     ]
   },
-  "assets": {
-    "/": {
-      "status": 200,
-      "bytes": 7734
+  "stream_frames": [
+    {
+      "text": "",
+      "type": "token"
     },
-    "/app.js": {
-      "status": 200,
-      "bytes": 26671
+    {
+      "text": "The ",
+      "type": "token"
     },
-    "/styles.css": {
-      "status": 200,
-      "bytes": 12606
+    {
+      "text": "shop ",
+      "type": "token"
+    },
+    {
+      "text": "has ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "9 ",
+      "type": "token"
+    },
+    {
+      "text": "* ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "7 ",
+      "type": "token"
+    },
+    {
+      "text": "= ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "<<9*7=63>>63 ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "pencils.\n",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "After ",
+      "type": "token"
+    },
+    {
+      "text": "giving ",
+      "type": "token"
+    },
+    {
+      "text": "away ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "8 ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "pencils, ",
+      "type": "token"
+    },
+    {
+      "text": "the ",
+      "type": "token"
+    },
+    {
+      "text": "shop ",
+      "type": "token"
+    },
+    {
+      "text": "has ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "63 ",
+      "type": "token"
+    },
+    {
+      "text": "- ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "8 ",
+      "type": "token"
+    },
+    {
+      "text": "= ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "<<63-8=55>>55 ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "pencils.\n",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "#### ",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "",
+      "type": "token"
+    },
+    {
+      "text": "55",
+      "type": "token"
+    },
+    {
+      "analysis": {
+        "answer": "55",
+        "answer_source": "marker",
+        "correct": true,
+        "format_ok": true,
+        "gold": "55",
+        "rewards": {
+          "diversity": 0.0,
+          "format": 0.5,
+          "outcome": 2.0,
+          "process": 0.6667,
+          "total": 3.1667
+        },
+        "steps": [
+          {
+            "computed": 63.0,
+            "duplicate": false,
+            "index": 0,
+            "lhs": "9",
+            "ok": true,
+            "op": "*",
+            "raw": "9 * 7 = 63",
+            "rhs": "7",
+            "stated": "63"
+          },
+          {
+            "computed": 55.0,
+            "duplicate": false,
+            "index": 1,
+            "lhs": "63",
+            "ok": true,
+            "op": "-",
+            "raw": "63 - 8 = 55",
+            "rhs": "8",
+            "stated": "55"
+          }
+        ],
+        "steps_correct": 2,
+        "steps_total": 2,
+        "steps_unique": 2,
+        "token_diversity": 0.8
+      },
+      "completion": "The shop has 9 * 7 = <<9*7=63>>63 pencils.\nAfter giving away 8 pencils, the shop has 63 - 8 = <<63-8=55>>55 pencils.\n#### 55",
+      "failed": false,
+      "latency_ms": 9001.320199982729,
+      "type": "done"
     }
-  },
-  "visual_browser_inspection": false,
-  "note": "Two arithmetic integration checks; not a held-out benchmark."
+  ],
+  "stream_question": "A shop has 9 boxes with 7 pencils each. It gives away 8 pencils. How many pencils remain?",
+  "visual_browser_inspection": false
 }
