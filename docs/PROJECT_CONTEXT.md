@@ -201,5 +201,5 @@ this scope-reset turn. Inspect owned processes before starting a GPU model.
 
 The ordinary Windows sandbox launcher has previously failed; scoped escalated
 workspace commands have worked. Existing runtimes are `.venv-gateway` for light
-web checks and `C:/Users/naval/AppData/Local/NanoReason/inference/.venv` for the
+web checks and `%LOCALAPPDATA%/NanoReason/inference/.venv` for the
 model stack. Environment compatibility must be verified rather than assumed.

@@ -38,7 +38,7 @@ actually active. Concurrent answer requests are serialized on the GPU; errors
 are surfaced and partial failed streams are not labelled successful.
 
 The existing Python runtime is
-`C:\Users\naval\AppData\Local\NanoReason\inference\.venv\Scripts\python.exe`.
+`$env:LOCALAPPDATA\NanoReason\inference\.venv\Scripts\python.exe`.
 Pass `-Python` to use a different configured environment. The launcher does not
 install packages or download model weights. A fresh machine needs the GPU and
 serving dependencies from `pyproject.toml`, the pinned base snapshot from
@@ -55,7 +55,7 @@ use training questions or select examples by verifier score or model correctness
 Run the following sequentially, with the app stopped:
 
 ```powershell
-$taskPython = 'C:\Users\naval\AppData\Local\NanoReason\inference\.venv\Scripts\python.exe'
+$taskPython = "$env:LOCALAPPDATA\NanoReason\inference\.venv\Scripts\python.exe"
 $env:PYTHONPATH = 'src'
 & $taskPython experiments/download_gsm8k_test.py
 $env:HF_HUB_OFFLINE = '1'

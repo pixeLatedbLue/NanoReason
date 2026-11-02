@@ -3,7 +3,37 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from nanoreason.matched_eval import atomic_json, compare_complete, prepare_sample, resume_items
+from nanoreason.matched_eval import (
+    adapter_label,
+    atomic_json,
+    compare_complete,
+    prepare_sample,
+    resume_items,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+class AdapterLabelTests(unittest.TestCase):
+    """The recorded adapter label must not carry the operator's home directory.
+
+    Provenance integrity rests on adapter_files_sha256, not on this string, so
+    the label can be repo-relative. An absolute path leaks the local folder
+    layout into evidence files that are committed and published.
+    """
+
+    def test_adapter_inside_the_repository_is_recorded_relative(self):
+        label = adapter_label(REPO_ROOT / "artifacts" / "slm" / "original-grpo")
+        self.assertEqual(label, "artifacts/slm/original-grpo")
+        self.assertNotIn("Users", label)
+
+    def test_adapter_outside_the_repository_keeps_its_absolute_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            outside = Path(directory).resolve() / "elsewhere"
+            self.assertEqual(adapter_label(outside), str(outside))
+
+    def test_no_adapter_is_recorded_as_none(self):
+        self.assertIsNone(adapter_label(None))
 
 
 class MatchedEvaluationTests(unittest.TestCase):

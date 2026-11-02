@@ -22,6 +22,24 @@ from .metrics import (
 from .stats import paired_comparison, wilson_interval
 
 SOURCE_URL = "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def adapter_label(adapter: Path | None) -> str | None:
+    """How an adapter is named in recorded provenance.
+
+    Relative to the repository when it lives inside it, absolute otherwise. The
+    label is only a name: integrity comes from ``adapter_files_sha256``, which
+    hashes the adapter's actual contents. An absolute path here would publish
+    the operator's home directory in committed evidence files and buy nothing
+    in verifiability.
+    """
+    if adapter is None:
+        return None
+    try:
+        return adapter.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(adapter)
 
 
 def digest(path: Path) -> str:
@@ -114,7 +132,7 @@ def run(args) -> None:
     prompts = [gsm8k_prompt(tokenizer, row["question"], few_shot=True) for row in sample["rows"]]
     token_ids = [tokenizer(prompt)["input_ids"] for prompt in prompts]
     identity = {
-        "arm": args.arm, "adapter": str(adapter) if adapter else None,
+        "arm": args.arm, "adapter": adapter_label(adapter),
         "adapter_files_sha256": adapter_files, "sample_sha256": digest(sample_path),
         "protocol": protocol, "environment": environment_info(),
         "prompt_ids_sha256": hashlib.sha256(json.dumps(token_ids).encode()).hexdigest(),
@@ -161,7 +179,7 @@ def run(args) -> None:
         marker_rate=sum(r["has_answer_marker"] for r in completed)/n, per_item=completed,
     )
     payload = result_payload(run_name=args.arm, base_model=cfg.model.base_model,
-                             adapter=str(adapter) if adapter else None, results=[result],
+                             adapter=adapter_label(adapter), results=[result],
                              config_path=args.config, settings=protocol)
     payload["provenance"] = identity
     payload["diagnostics"] = {
