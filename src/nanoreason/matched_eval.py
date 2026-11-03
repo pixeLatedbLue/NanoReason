@@ -42,6 +42,29 @@ def adapter_label(adapter: Path | None) -> str | None:
         return str(adapter)
 
 
+def reset_peak_memory() -> None:
+    """Start the peak-memory probe over, where there is a GPU to probe.
+
+    torch.cuda.reset_peak_memory_stats raises AttributeError on a CPU-only
+    build of torch rather than returning harmlessly, so the guard is needed to
+    run this protocol on CPU at all. Running it on CPU with a tiny model is how
+    a wrong flag gets caught before it wastes a multi-hour GPU session.
+    """
+    import torch
+
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+
+
+def peak_allocated_bytes() -> int:
+    """Peak GPU bytes allocated so far, or zero when running on CPU."""
+    import torch
+
+    if not torch.cuda.is_available():
+        return 0
+    return int(torch.cuda.max_memory_allocated())
+
+
 def digest(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
@@ -142,7 +165,7 @@ def run(args) -> None:
     if len(completed) < len(prompts):
         print(f"Loading {args.arm}; resuming at {len(completed)}/{len(prompts)}", flush=True)
         _, model = load_causal_lm(cfg.model, adapter=str(adapter) if adapter else None)
-        torch.cuda.reset_peak_memory_stats()
+        reset_peak_memory()
         for offset in range(len(completed), len(prompts)):
             row = sample["rows"][offset]
             inputs = tokenizer(prompts[offset], return_tensors="pt").to(model.device)
@@ -163,7 +186,7 @@ def run(args) -> None:
                 "correct": numeric_equal(prediction, gold), "generated_tokens": len(generated),
                 "token_cap_hit": len(generated) >= args.max_new_tokens and generated[-1] not in eos_ids,
                 "has_answer_marker": "####" in text, "latency_seconds": time.perf_counter() - started,
-                "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
+                "peak_allocated_bytes": peak_allocated_bytes(),
             })
             atomic_json(progress_path, {"identity": identity, "items": completed})
             print(f"{args.arm}: {len(completed)}/{len(prompts)}, "

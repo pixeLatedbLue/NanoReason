@@ -1,13 +1,17 @@
+import contextlib
 import json
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 from nanoreason.matched_eval import (
     adapter_label,
     atomic_json,
     compare_complete,
+    peak_allocated_bytes,
     prepare_sample,
+    reset_peak_memory,
     resume_items,
 )
 
@@ -34,6 +38,42 @@ class AdapterLabelTests(unittest.TestCase):
 
     def test_no_adapter_is_recorded_as_none(self):
         self.assertIsNone(adapter_label(None))
+
+
+
+class PeakMemoryTests(unittest.TestCase):
+    """The per-item memory probe must not require a CUDA build of torch.
+
+    torch.cuda.reset_peak_memory_stats raises AttributeError on a CPU-only
+    build, which kills the run before it generates anything. A CPU smoke test
+    of this protocol is the only cheap way to catch a bad flag before it costs
+    a multi-hour GPU session, so the probe reports zero instead of failing.
+    """
+
+    def test_probe_works_without_cuda(self):
+        reset_peak_memory()
+        self.assertIsInstance(peak_allocated_bytes(), int)
+
+    def test_probe_calls_torch_once_when_a_gpu_is_present(self):
+        """Guards against the reset delegating to itself, which recurses forever.
+
+        On a CPU box that bug is invisible: the guard short-circuits before
+        reaching it, and the failure would appear first on the GPU.
+        """
+        import torch
+
+        calls = []
+        patch = unittest.mock.patch.object
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(patch(torch.cuda, "is_available", return_value=True))
+            stack.enter_context(patch(torch.cuda, "reset_peak_memory_stats",
+                                      side_effect=lambda *a, **k: calls.append(1),
+                                      create=True))
+            stack.enter_context(patch(torch.cuda, "max_memory_allocated",
+                                      return_value=123, create=True))
+            reset_peak_memory()
+            self.assertEqual(peak_allocated_bytes(), 123)
+        self.assertEqual(calls, [1])
 
 
 class MatchedEvaluationTests(unittest.TestCase):
