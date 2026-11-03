@@ -1,11 +1,17 @@
+import hashlib
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 
-from run_matched_eval_all import build_commands, selected_arms  # noqa: E402
+from run_matched_eval_all import (  # noqa: E402
+    build_commands,
+    selected_arms,
+    verify_adapter,
+)
 
 
 class BuildCommandsTests(unittest.TestCase):
@@ -73,6 +79,39 @@ class BuildCommandsTests(unittest.TestCase):
         """Session 1 runs base alone and has no reason to hold either adapter."""
         bad = dict(self.KW, sft_adapter=None, grpo_adapter=None)
         self.assertEqual(len(build_commands(**bad, arms=("base",))), 1)
+
+
+class VerifyAdapterTests(unittest.TestCase):
+    """An arm must prove which weights it is about to evaluate.
+
+    Kaggle mounts a notebook's output at its latest version, with no way to
+    pin an older one. The latest version of the training notebook holds a
+    different pilot's artifacts, so the directory an arm is handed is not
+    self-evidently the recovered checkpoint. Checking the hash costs a second;
+    discovering it afterwards costs the session.
+    """
+
+    def adapter_dir(self, directory, payload=b"weights"):
+        adapter = Path(directory) / "grpo-final"
+        adapter.mkdir()
+        (adapter / "adapter_model.safetensors").write_bytes(payload)
+        return adapter
+
+    def test_matching_digest_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            adapter = self.adapter_dir(directory)
+            expected = hashlib.sha256(b"weights").hexdigest()
+            verify_adapter(str(adapter), expected)
+
+    def test_different_weights_are_refused_before_the_gpu_is_touched(self):
+        with tempfile.TemporaryDirectory() as directory:
+            adapter = self.adapter_dir(directory, b"some other pilot")
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                verify_adapter(str(adapter), hashlib.sha256(b"weights").hexdigest())
+
+    def test_no_expected_digest_means_no_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            verify_adapter(str(self.adapter_dir(directory)), None)
 
 
 if __name__ == "__main__":

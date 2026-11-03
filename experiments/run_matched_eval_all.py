@@ -29,6 +29,7 @@ unpairable.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -92,6 +93,26 @@ def build_commands(
     return commands
 
 
+def verify_adapter(adapter: str, expected_sha256: str | None) -> None:
+    """Refuse an adapter whose weights are not the ones asked for.
+
+    Kaggle mounts a notebook's output at its latest version and offers no way
+    to pin an older one, so the directory an arm is handed may hold a
+    different run's artifacts. matched_eval records the hash either way, but
+    it records it after the hours of generation. This fails in a second.
+    """
+    if not expected_sha256:
+        return
+    weights = Path(adapter) / "adapter_model.safetensors"
+    with weights.open("rb") as stream:
+        actual = hashlib.file_digest(stream, "sha256").hexdigest()
+    if actual != expected_sha256:
+        raise ValueError(
+            f"{weights} does not match the expected adapter; "
+            f"expected {expected_sha256}, found {actual}")
+    print(f"adapter verified: {weights} is {actual}", flush=True)
+
+
 def ensure_source(source: Path) -> None:
     """Fetch the official GSM8K test split if it is not already present.
 
@@ -125,7 +146,17 @@ def main() -> int:
                              "all three by default")
     parser.add_argument("--sft-adapter", default=None)
     parser.add_argument("--grpo-adapter", default=None)
+    parser.add_argument("--sft-sha256", default=None,
+                        help="SHA-256 the SFT adapter_model.safetensors must have")
+    parser.add_argument("--grpo-sha256", default=None,
+                        help="SHA-256 the GRPO adapter_model.safetensors must have")
     args = parser.parse_args()
+
+    arms = selected_arms(args.arms)
+    for arm, adapter, expected in (("sft", args.sft_adapter, args.sft_sha256),
+                                   ("grpo", args.grpo_adapter, args.grpo_sha256)):
+        if arm in arms and adapter:
+            verify_adapter(adapter, expected)
 
     ensure_source(ROOT / args.source)
 
@@ -133,7 +164,7 @@ def main() -> int:
         config=args.config, source=args.source, output=args.output,
         samples=args.samples, seed=args.seed, max_new_tokens=args.max_new_tokens,
         sft_adapter=args.sft_adapter, grpo_adapter=args.grpo_adapter,
-        arms=selected_arms(args.arms),
+        arms=arms,
     )
     for command in commands:
         arm = command[command.index("--arm") + 1]
