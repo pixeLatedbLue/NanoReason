@@ -15,6 +15,15 @@ hours in.
 
 Arms resume: ``matched_eval`` checkpoints per item, so a killed session
 continues rather than restarting.
+
+Measured on an RTX 4060 the three arms cost 19.8 seconds per item together,
+which is about 7 hours for 1319 items; a T4 is roughly half that speed and a
+Kaggle session is capped at 12 hours. So ``--arms`` runs a subset, one arm per
+session. That pairs correctly because ``environment_info`` records library
+versions and the OS and nothing machine-specific, and the notebook pins those
+versions. Do not edit this module or the modules it hashes between sessions:
+the recorded protocol includes their SHA-256, and a change makes earlier arms
+unpairable.
 """
 
 from __future__ import annotations
@@ -28,6 +37,21 @@ ROOT = Path(__file__).resolve().parents[1]
 ARMS = ("base", "sft", "grpo")
 
 
+def selected_arms(names: str | None) -> tuple[str, ...]:
+    """Which arms this session runs, always in canonical order.
+
+    Base stays first whatever order the names arrive in, because the trained
+    arms pair themselves against base.json as they finish.
+    """
+    if not names:
+        return ARMS
+    chosen = {name.strip() for name in names.split(",") if name.strip()}
+    unknown = sorted(chosen - set(ARMS))
+    if unknown:
+        raise ValueError(f"Unknown arm(s): {', '.join(unknown)}")
+    return tuple(arm for arm in ARMS if arm in chosen)
+
+
 def build_commands(
     *,
     config: str,
@@ -38,6 +62,7 @@ def build_commands(
     max_new_tokens: int,
     sft_adapter: str | None,
     grpo_adapter: str | None,
+    arms: tuple[str, ...] = ARMS,
 ) -> list[list[str]]:
     """One command per arm, base first.
 
@@ -45,12 +70,12 @@ def build_commands(
     ``base.json`` as they finish, so it has to exist by then.
     """
     adapters = {"base": None, "sft": sft_adapter, "grpo": grpo_adapter}
-    for arm in ("sft", "grpo"):
-        if not adapters[arm]:
+    for arm in arms:
+        if arm != "base" and not adapters[arm]:
             raise ValueError(f"The {arm} arm needs an explicit --{arm}-adapter")
 
     commands = []
-    for arm in ARMS:
+    for arm in arms:
         command = [
             sys.executable, "-m", "nanoreason.matched_eval",
             "--arm", arm,
@@ -95,8 +120,11 @@ def main() -> int:
     parser.add_argument("--output", default="artifacts/slm/evaluation-full",
                         help="kept separate from the n=64 run so its evidence survives")
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--sft-adapter", required=True)
-    parser.add_argument("--grpo-adapter", required=True)
+    parser.add_argument("--arms", default=None,
+                        help="comma-separated subset, e.g. base or sft,grpo; "
+                             "all three by default")
+    parser.add_argument("--sft-adapter", default=None)
+    parser.add_argument("--grpo-adapter", default=None)
     args = parser.parse_args()
 
     ensure_source(ROOT / args.source)
@@ -105,6 +133,7 @@ def main() -> int:
         config=args.config, source=args.source, output=args.output,
         samples=args.samples, seed=args.seed, max_new_tokens=args.max_new_tokens,
         sft_adapter=args.sft_adapter, grpo_adapter=args.grpo_adapter,
+        arms=selected_arms(args.arms),
     )
     for command in commands:
         arm = command[command.index("--arm") + 1]

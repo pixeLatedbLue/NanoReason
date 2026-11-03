@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 
-from run_matched_eval_all import build_commands  # noqa: E402
+from run_matched_eval_all import build_commands, selected_arms  # noqa: E402
 
 
 class BuildCommandsTests(unittest.TestCase):
@@ -46,10 +46,33 @@ class BuildCommandsTests(unittest.TestCase):
         for command in build_commands(**self.KW):
             self.assertEqual(command[:3], [sys.executable, "-m", "nanoreason.matched_eval"])
 
+    def test_one_arm_can_be_run_alone(self):
+        """A T4 cannot finish all three arms inside one Kaggle session.
+
+        Measured on an RTX 4060 the three arms cost 19.8 seconds per item
+        together; 1319 items is about 7 hours there and a T4 is roughly half
+        that speed. Arms therefore run one per session, which pairs correctly
+        because environment_info records only library versions and the OS,
+        and the notebook pins those.
+        """
+        commands = build_commands(**self.KW, arms=("grpo",))
+        self.assertEqual([c[c.index("--arm") + 1] for c in commands], ["grpo"])
+
+    def test_selected_arms_keeps_base_first_and_rejects_unknown_names(self):
+        self.assertEqual(selected_arms(None), ("base", "sft", "grpo"))
+        self.assertEqual(selected_arms("grpo,base"), ("base", "grpo"))
+        with self.assertRaisesRegex(ValueError, "nonsense"):
+            selected_arms("nonsense")
+
     def test_missing_adapter_for_a_trained_arm_is_rejected(self):
         bad = dict(self.KW, grpo_adapter=None)
         with self.assertRaisesRegex(ValueError, "grpo"):
             build_commands(**bad)
+
+    def test_an_adapter_is_only_required_for_an_arm_being_run(self):
+        """Session 1 runs base alone and has no reason to hold either adapter."""
+        bad = dict(self.KW, sft_adapter=None, grpo_adapter=None)
+        self.assertEqual(len(build_commands(**bad, arms=("base",))), 1)
 
 
 if __name__ == "__main__":
