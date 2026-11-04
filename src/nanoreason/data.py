@@ -34,17 +34,10 @@ def load_eval_dataset(task: EvalTaskConfig) -> "Dataset":
         raise ValueError(f"Evaluation dataset is empty for {task.dataset}/{task.split}")
     return data
 
-
 _EQ_RE = re.compile(r"\d\s*[+\-*/=](?=\s*-?\d)")
 
 
 def reasoning_difficulty(answer: str) -> int:
-    """Cheap proxy for problem difficulty used to order the curriculum.
-
-    Counts digit-adjacent arithmetic operators and non-empty reasoning lines in
-    the reference solution; more steps == harder.  Deterministic and
-    dataset-agnostic, and immune to prose hyphens/markdown bullets.
-    """
     if not answer:
         return 0
     operators = len(_EQ_RE.findall(answer))
@@ -53,11 +46,6 @@ def reasoning_difficulty(answer: str) -> int:
 
 
 def order_by_curriculum(data: "Dataset", answer_field: str = "answer") -> "Dataset":
-    """Return ``data`` sorted easy -> hard by :func:`reasoning_difficulty`.
-
-    Stable sort, so it is reproducible.  Shuffle must be disabled by the caller
-    for the ordering to reach the trainer intact.
-    """
     if answer_field not in data.column_names:
         return data
     difficulties = [reasoning_difficulty(str(a)) for a in data[answer_field]]
@@ -66,19 +54,11 @@ def order_by_curriculum(data: "Dataset", answer_field: str = "answer") -> "Datas
 
 
 def _normalise_gsm8k(data: "Dataset") -> "Dataset":
-    """Already in ``{question, answer}`` form; keep only those columns."""
     keep = [c for c in data.column_names if c not in {"question", "answer"}]
     return data.remove_columns(keep) if keep else data
 
 
 def aqua_to_qa(example: dict) -> dict:
-    """Convert an AQuA-RAT row into GSM8K-style ``{question, answer}``.
-
-    The answer keeps the chain-of-thought rationale and ends with the required
-    ``#### <letter>`` marker so the same SFT/format machinery applies.
-    Raises a diagnosable error on malformed rows instead of a bare KeyError
-    deep inside ``dataset.map``.
-    """
     missing = [key for key in ("question", "correct") if key not in example]
     if missing:
         raise ValueError(f"AQuA row missing required keys {missing}: {str(example)[:200]}")
@@ -91,7 +71,6 @@ def aqua_to_qa(example: dict) -> dict:
 
 
 def load_training_dataset(dataset: str, subset: str | None, split: str) -> "Dataset":
-    """Load one training source as a uniform ``{question, answer}`` dataset."""
     from datasets import load_dataset
 
     data = load_dataset(dataset, subset, split=split) if subset else load_dataset(dataset, split=split)
@@ -108,11 +87,6 @@ def load_combined_training(
     split: str,
     extra_datasets: list[str] | None = None,
 ) -> "Dataset":
-    """Load the primary training set plus any ``extra_datasets`` and concat.
-
-    Extra datasets are given as ``"name"`` or ``"name:subset"`` strings and are
-    coerced to the same ``{question, answer}`` schema.
-    """
     from datasets import concatenate_datasets
 
     parts = [load_training_dataset(dataset, subset, split)]

@@ -15,8 +15,6 @@ from run_matched_eval_all import (  # noqa: E402
 
 
 class BuildCommandsTests(unittest.TestCase):
-    """A wrong flag here costs a multi-hour GPU session, so the command list is
-    asserted rather than eyeballed."""
 
     KW = dict(
         config="configs/local_inference.toml",
@@ -53,14 +51,6 @@ class BuildCommandsTests(unittest.TestCase):
             self.assertEqual(command[:3], [sys.executable, "-m", "nanoreason.matched_eval"])
 
     def test_one_arm_can_be_run_alone(self):
-        """A T4 cannot finish all three arms inside one Kaggle session.
-
-        Measured on an RTX 4060 the three arms cost 19.8 seconds per item
-        together; 1319 items is about 7 hours there and a T4 is roughly half
-        that speed. Arms therefore run one per session, which pairs correctly
-        because environment_info records only library versions and the OS,
-        and the notebook pins those.
-        """
         commands = build_commands(**self.KW, arms=("grpo",))
         self.assertEqual([c[c.index("--arm") + 1] for c in commands], ["grpo"])
 
@@ -76,20 +66,11 @@ class BuildCommandsTests(unittest.TestCase):
             build_commands(**bad)
 
     def test_an_adapter_is_only_required_for_an_arm_being_run(self):
-        """Session 1 runs base alone and has no reason to hold either adapter."""
         bad = dict(self.KW, sft_adapter=None, grpo_adapter=None)
         self.assertEqual(len(build_commands(**bad, arms=("base",))), 1)
 
 
 class VerifyAdapterTests(unittest.TestCase):
-    """An arm must prove which weights it is about to evaluate.
-
-    Kaggle mounts a notebook's output at its latest version, with no way to
-    pin an older one. The latest version of the training notebook holds a
-    different pilot's artifacts, so the directory an arm is handed is not
-    self-evidently the recovered checkpoint. Checking the hash costs a second;
-    discovering it afterwards costs the session.
-    """
 
     def adapter_dir(self, directory, payload=b"weights"):
         adapter = Path(directory) / "grpo-final"
@@ -112,7 +93,6 @@ class VerifyAdapterTests(unittest.TestCase):
     def test_no_expected_digest_means_no_check(self):
         with tempfile.TemporaryDirectory() as directory:
             verify_adapter(str(self.adapter_dir(directory)), None)
-
 
 if __name__ == "__main__":
     unittest.main()

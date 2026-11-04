@@ -1,11 +1,3 @@
-"""Tests for the serving layer's truth core: analysis and the inference engines.
-
-CPU-only, no network, no model. The point of most of these is not that the
-numbers are *pleasant* but that they are the SAME numbers the GRPO trainer sees:
-the UI's central claim is that it shows the real training signal, and the only
-thing standing between that claim and a comfortable lie is this file.
-"""
-
 import os
 import sys
 import unittest
@@ -148,16 +140,6 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(bare["rewards"], full["rewards"])
 
     def test_process_reward_scales_against_the_reference_solution(self):
-        """The substance floor must come from the gold rationale, as in training.
-
-        ``process_reward`` derives its floor from the reference solution's own
-        equation count and only falls back to the constant when the gold carries
-        none. A one-step completion answering a one-step problem is the case that
-        tells the two apart: full credit against the rationale, scaled down to
-        the three-step fallback against a bare number. If ``analyze`` ever stops
-        forwarding the raw gold, the first assertion drops to 0.3333 and the UI
-        starts printing a reward the trainer never gave.
-        """
         completion = "5 + 7 = 12\n#### 12"
         rationale = "Jane starts with 5 apples and buys 7 more.\n5 + 7 = 12\n#### 12"
         against_rationale = analyze(completion, gold=rationale)["rewards"]["process"]
@@ -312,9 +294,6 @@ class TransformersEngineTests(unittest.TestCase):
         self.assertFalse(info.is_demo)
 
     def test_concurrent_first_requests_load_the_model_once(self):
-        """FastAPI runs plain handlers in a threadpool, so the first burst of
-        requests can all find the engine unloaded at the same moment. Each one
-        that proceeds to load pulls several gigabytes; only one may."""
         import threading
         import time
 
@@ -337,9 +316,6 @@ class TransformersEngineTests(unittest.TestCase):
         self.assertIsNotNone(engine._model)
 
     def test_closing_the_stream_early_stops_generation(self):
-        """A browser tab closed mid-answer must not leave the GPU decoding the
-        remaining hundreds of tokens for nobody. Starlette closes the generator
-        on disconnect; that close has to reach ``model.generate``."""
         import time
 
         import torch
@@ -465,7 +441,6 @@ class BaseEngineTests(unittest.TestCase):
             base.info()
         with self.assertRaises(NotImplementedError):
             list(base.stream("q"))
-
 
 if __name__ == "__main__":
     unittest.main()

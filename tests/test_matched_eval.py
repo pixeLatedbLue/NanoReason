@@ -19,12 +19,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class AdapterLabelTests(unittest.TestCase):
-    """The recorded adapter label must not carry the operator's home directory.
-
-    Provenance integrity rests on adapter_files_sha256, not on this string, so
-    the label can be repo-relative. An absolute path leaks the local folder
-    layout into evidence files that are committed and published.
-    """
 
     def test_adapter_inside_the_repository_is_recorded_relative(self):
         label = adapter_label(REPO_ROOT / "artifacts" / "slm" / "original-grpo")
@@ -40,26 +34,13 @@ class AdapterLabelTests(unittest.TestCase):
         self.assertIsNone(adapter_label(None))
 
 
-
 class PeakMemoryTests(unittest.TestCase):
-    """The per-item memory probe must not require a CUDA build of torch.
-
-    torch.cuda.reset_peak_memory_stats raises AttributeError on a CPU-only
-    build, which kills the run before it generates anything. A CPU smoke test
-    of this protocol is the only cheap way to catch a bad flag before it costs
-    a multi-hour GPU session, so the probe reports zero instead of failing.
-    """
 
     def test_probe_works_without_cuda(self):
         reset_peak_memory()
         self.assertIsInstance(peak_allocated_bytes(), int)
 
     def test_probe_calls_torch_once_when_a_gpu_is_present(self):
-        """Guards against the reset delegating to itself, which recurses forever.
-
-        On a CPU box that bug is invisible: the guard short-circuits before
-        reaching it, and the failure would appear first on the GPU.
-        """
         import torch
 
         calls = []
@@ -113,7 +94,6 @@ class MatchedEvaluationTests(unittest.TestCase):
         candidate["provenance"]["prompt_ids_sha256"] = "different"
         with self.assertRaisesRegex(ValueError, "prompt_ids_sha256"):
             compare_complete(base, candidate)
-
 
 if __name__ == "__main__":
     unittest.main()

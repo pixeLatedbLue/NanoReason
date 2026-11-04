@@ -311,8 +311,6 @@ class DataTests(unittest.TestCase):
 class CompareResultsTests(unittest.TestCase):
     @staticmethod
     def _payload(summary):
-        """An artifact shaped like the evaluator writes: accuracy is the ratio
-        of the counts, never a free-standing number."""
         summary_block = {
             task: {"accuracy": acc, "correct": round(acc * 100), "total": 100}
             for task, acc in summary.items()
@@ -356,11 +354,6 @@ class CompareResultsTests(unittest.TestCase):
         self.assertIn("gsm8k,0.4000,0.4300,0.0300,True", out)
 
     def test_accuracy_comes_from_the_counts_not_the_recorded_field(self):
-        """The artifact stores accuracy alongside correct/total, and the CLI's
-        --ci interval is built from the counts. If the two ever disagree, the
-        counts are the primary record: they are what the evaluator tallied, and
-        the accuracy field is only a derived convenience that a hand-edited or
-        half-written file can carry stale."""
         corrupt = {"summary": {"gsm8k": {"accuracy": 0.90, "correct": 1, "total": 100}}}
         honest = {"summary": {"gsm8k": {"accuracy": 0.50, "correct": 50, "total": 100}}}
         with tempfile.TemporaryDirectory() as tmp:
@@ -638,7 +631,6 @@ class StatsTests(unittest.TestCase):
         self.assertEqual(both_rows[1][12], "0.0625")
         self.assertEqual(both_rows[1][13], "False")
         self.assertEqual({len(row) for row in both_rows}, {14})
-
 
 if __name__ == "__main__":
     unittest.main()

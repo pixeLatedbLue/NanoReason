@@ -1,16 +1,3 @@
-"""Stage 4 export: merge the trained adapter and serve a quantized model.
-
-Training only updates the QLoRA adapter.  For deployment we:
-
-1. load the base model in full precision,
-2. attach the trained adapter and ``merge_and_unload`` it into the weights,
-3. save the merged FP16 model, and
-4. (optionally) reload it with 4-bit NF4 quantization for cheap INT4 inference.
-
-This makes the "merge then requantize for inference" stage of the project a
-real, runnable artifact instead of a claim.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -30,7 +17,6 @@ from .modeling import load_tokenizer, torch_dtype
 
 
 def merge_adapter(base_model: str, adapter: str, merged_dir: str, dtype: str = "float16") -> str:
-    """Merge ``adapter`` into ``base_model`` and save the result to ``merged_dir``."""
     if not Path(adapter).exists():
         raise FileNotFoundError(f"Adapter path does not exist: {adapter}")
     tokenizer = load_tokenizer(adapter)
@@ -49,7 +35,6 @@ def merge_adapter(base_model: str, adapter: str, merged_dir: str, dtype: str = "
 def load_for_inference(
     merged_dir: str, load_4bit: bool, dtype: str = "float16"
 ) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
-    """Load the merged model, optionally quantized to 4-bit NF4 for inference."""
     quant = None
     if load_4bit:
         quant = BitsAndBytesConfig(
@@ -102,7 +87,6 @@ def main() -> None:
     if args.prompt is not None:
         tokenizer, model = load_for_inference(args.merged_dir, args.load_4bit, cfg.model.torch_dtype)
         print(generate(tokenizer, model, args.prompt))
-
 
 if __name__ == "__main__":
     main()

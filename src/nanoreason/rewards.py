@@ -1,27 +1,3 @@
-"""Hybrid reward functions for GRPO.
-
-The central design is a *hybrid* reward that combines an outcome-level signal
-(ORM) with a dense process-level signal (PRM) so the policy cannot earn reward
-by gaming surface patterns alone.
-
-This module implements that with deterministic, hack-proof verifiers:
-
-* ``outcome_reward`` (ORM)  -- did the final answer match the gold answer?
-* ``process_reward``  (PRM) -- are the intermediate arithmetic steps actually
-  correct?  Each ``a op b = c`` equation is numerically verified, so fake or
-  wrong equations are penalised instead of rewarded.
-* ``format_reward``         -- is the required ``#### <number>`` present?
-* ``diversity_reward``      -- entropy-style anti-collapse term that punishes
-  the degenerate repetition GRPO can drift into on small models.
-
-An optional model-based PRM (e.g. a teacher-distilled Skywork reward model) can
-be plugged in through ``ModelProcessReward`` without changing the trainer.
-
-``correctness_reward`` and ``reasoning_reward`` are legacy aliases of
-``outcome_reward`` and ``process_reward``, kept so older training scripts that
-import the earlier names keep working. Nothing in this repository uses them.
-"""
-
 from __future__ import annotations
 
 import re
@@ -44,27 +20,18 @@ def _completion_text(completion) -> str:
 
 
 def outcome_reward(prompts, completions, answer, **kwargs) -> list[float]:
-    """+2.0 when the extracted final answer matches the gold answer."""
     rewards = []
     for completion, gold in zip(completions, answer):
         pred = extract_final_number(_completion_text(completion))
         rewards.append(2.0 if numeric_equal(pred, gold_number(gold)) else 0.0)
     return rewards
 
-
 correctness_reward = outcome_reward
-
 
 _SUBSTANCE_STEPS = 3
 
 
 def reference_steps(answer) -> int | None:
-    """How many distinct verified equations the reference solution contains.
-
-    GSM8K rationales carry their own arithmetic, so the dataset already states
-    how much work a problem is worth. Returns ``None`` when the gold answer
-    carries no equations (a bare ``#### 42``), leaving the caller to fall back.
-    """
     if answer is None:
         return None
     _, total = verify_arithmetic_steps(str(answer), dedupe=True)
@@ -72,27 +39,6 @@ def reference_steps(answer) -> int | None:
 
 
 def process_reward(prompts, completions, answer=None, **kwargs) -> list[float]:
-    """Dense step-level signal based on verified arithmetic.
-
-    Base score = ``correct_fraction - 0.5 * wrong_fraction`` over the *unique*
-    equations in the completion, so repeating an equation never adds credit.
-    Wrong equations are penalised at full weight and a response with no
-    equations earns 0. Every step is recomputed, so fabricated arithmetic is
-    punished rather than rewarded.
-
-    Positive scores are then scaled by substance, ``min(steps, floor) / floor``.
-    The floor is the *reference solution's own* step count rather than a
-    constant. A fixed floor of three was the original design and it is
-    exploitable in the opposite direction from the one it was guarding: a
-    genuinely correct two-step solution to a two-step problem was scaled to
-    0.67 while three padded trivial equations reached the full 1.0, so the
-    reward preferred padding to honest work (see experiment E1 in
-    ``experiments/component_validation.py``, which scores both floors side by
-    side and is runnable from a checkout).
-    Measuring substance against what the problem actually requires removes that
-    incentive: an honest solution reaches the ceiling, and padding past the
-    reference earns nothing extra.
-    """
     rewards = []
     for index, completion in enumerate(completions):
         text = _completion_text(completion)
@@ -116,23 +62,11 @@ def process_reward(prompts, completions, answer=None, **kwargs) -> list[float]:
 
 
 def format_reward(prompts, completions, **kwargs) -> list[float]:
-    """+0.5 when the response ends with the required ``#### <number>`` marker.
-
-    Trailing sentence punctuation after the number is tolerated ("#### 42.")
-    so this stays consistent with what ``extract_final_number`` accepts;
-    substantive trailing text still voids the reward.
-    """
     pattern = re.compile(r"####\s*\$?-?\d+(?:,\d{3})*(?:\.\d+)?[.!]?\s*$")
     return [0.5 if pattern.search(_completion_text(c).strip()) else 0.0 for c in completions]
 
 
 def diversity_reward(prompts, completions, min_ratio: float = 0.35, **kwargs) -> list[float]:
-    """Entropy-style anti-collapse term.
-
-    Penalises degenerate repetition (unique-token ratio below ``min_ratio``)
-    with a small negative reward; healthy generations get 0.  Keeps the policy
-    from collapsing onto a single repeated string during RL.
-    """
     rewards = []
     for completion in completions:
         ratio = token_diversity(_completion_text(completion))
@@ -141,13 +75,6 @@ def diversity_reward(prompts, completions, min_ratio: float = 0.35, **kwargs) ->
 
 
 class ModelProcessReward:
-    """Wraps a HuggingFace sequence-classification reward model as a PRM.
-
-    Lets you swap the deterministic verifier for a teacher-distilled reward
-    model (e.g. ``Skywork/Skywork-Reward-Llama-3.1-8B``) without touching the
-    trainer.  The model is loaded lazily so importing this module stays cheap
-    and CPU-only environments are unaffected.
-    """
 
     __name__ = "model_process_reward"
 
@@ -194,13 +121,6 @@ def build_reward_funcs(
     model_prm: str | None = None,
     model_prm_scale: float = 1.0,
 ):
-    """Return the list of reward callables for the GRPO trainer.
-
-    ``outcome_reward`` (ORM) and ``format_reward`` are always included; the
-    process reward (PRM) and entropy/diversity term are toggleable so reward
-    shaping can be ablated (ORM-only first, then add PRM) exactly as the
-    project's reward-shaping methodology describes.
-    """
     funcs = [outcome_reward, format_reward]
     if use_process:
         funcs.append(process_reward)
@@ -209,6 +129,5 @@ def build_reward_funcs(
     if model_prm:
         funcs.append(ModelProcessReward(model_prm, scale=model_prm_scale))
     return funcs
-
 
 reasoning_reward = process_reward

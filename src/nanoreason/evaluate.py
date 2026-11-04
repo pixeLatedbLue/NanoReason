@@ -84,14 +84,6 @@ def eval_strategyqa(tokenizer, model, cfg: EvalTaskConfig, few_shot: bool) -> Ev
 
 
 def eval_mmlu(tokenizer, model, cfg: EvalTaskConfig, few_shot: bool) -> EvalResult:
-    """Score MMLU by comparing the A/B/C/D next-token logits.
-
-    Nothing is generated here, so there is no place to put demonstrations:
-    ``mmlu_prompt`` takes no few-shot examples. The ``few_shot`` argument is
-    therefore discarded rather than threaded through as the other evaluators do,
-    and the result records ``few_shot=False`` so the run JSON states the
-    condition that actually applied.
-    """
     del few_shot
     data = load_eval_dataset(cfg)
     labels = ["A", "B", "C", "D"]
@@ -184,7 +176,6 @@ def eval_aqua(tokenizer, model, cfg: EvalTaskConfig, few_shot: bool) -> EvalResu
         unparsed=unparsed, marker_rate=round(marker_hits / len(data), 4), per_item=per_item,
     )
 
-
 EVALUATORS = {
     "strategyqa": eval_strategyqa,
     "gsm8k": eval_gsm8k,
@@ -237,7 +228,6 @@ def main() -> None:
     output_path = Path(cfg.evaluation.output_dir) / f"{run_name}.json"
     write_json(output_path, payload)
     print(f"Wrote {output_path}")
-
 
 if __name__ == "__main__":
     main()

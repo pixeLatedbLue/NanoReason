@@ -1,14 +1,3 @@
-"""Read-only view over the evaluation artifacts in ``results/``.
-
-The dashboard reads the same JSON files ``nanoreason.evaluate`` writes and the
-same ones the reporting rules require numbers to come from — there is no second
-store and no cache that could drift from the artifacts on disk.
-
-Nothing here computes statistics of its own: intervals and paired tests come
-from ``nanoreason.stats``, so the browser, the CLI and any report quote one
-implementation.
-"""
-
 from __future__ import annotations
 
 import json
@@ -24,14 +13,6 @@ _EXCLUDED = {"forgetting_probe.json"}
 
 
 class UnknownRunError(LookupError):
-    """Raised when a named run cannot be loaded.
-
-    A dedicated type rather than a bare ``KeyError`` because the API turns this
-    into a 400 that names the offending operand: any *incidental* ``KeyError``
-    from deeper in the stack (a run whose ``per_item`` records are missing a
-    key, say) would otherwise be reported to the user as "unknown run 'index'",
-    blaming their query for a corrupt artifact.
-    """
 
     def __init__(self, name: str) -> None:
         super().__init__(f"Unknown run: {name}")
@@ -39,12 +20,6 @@ class UnknownRunError(LookupError):
 
 
 def runs_dir() -> Path:
-    """Resolved at call time, not import time, so tests can repoint it.
-
-    An empty value falls back to the default: compose files routinely pass
-    ``NANOREASON_RESULTS=`` for an unset knob, and ``Path("")`` is ``Path(".")``,
-    which would silently scan the working directory for stray JSON.
-    """
     return Path(os.environ.get("NANOREASON_RESULTS", "").strip() or "results")
 
 
@@ -53,7 +28,6 @@ def configs_dir() -> Path:
 
 
 def _task_stat(entry: Any) -> dict[str, Any] | None:
-    """Coerce one ``summary[task]`` entry, or ``None`` when it is not one."""
     if not isinstance(entry, dict):
         return None
     try:
@@ -65,14 +39,6 @@ def _task_stat(entry: Any) -> dict[str, Any] | None:
 
 
 def _summarise(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Reduce a run payload to the dashboard row shape.
-
-    Every field is coerced rather than passed through. Skipping unparseable
-    *JSON* is not enough on its own: a file can parse perfectly and still carry
-    a half-written ``summary``, and handing that straight to the response model
-    turns one bad artifact into a 500 for the whole dashboard — the failure this
-    layer exists to prevent.
-    """
     summary = payload.get("summary")
     tasks: dict[str, dict[str, Any]] = {}
     if isinstance(summary, dict):
@@ -97,12 +63,6 @@ def _summarise(name: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def list_runs() -> list[dict[str, Any]]:
-    """Every readable run artifact, newest first.
-
-    A malformed file is skipped rather than raised: evaluation writes these
-    during long GPU jobs, and a half-flushed file must not take the dashboard
-    down while a run is still in progress.
-    """
     directory = runs_dir()
     if not directory.is_dir():
         return []
@@ -125,13 +85,6 @@ def list_runs() -> list[dict[str, Any]]:
 
 
 def load_run(name: str) -> dict[str, Any] | None:
-    """Load one run by stem.
-
-    ``name`` arrives straight from the URL, so it is treated as hostile: any
-    separator, parent reference or drive letter is rejected outright, and the
-    resolved path is then confirmed to sit inside the results directory before
-    anything is read.
-    """
     if not name or any(ch in name for ch in ("/", "\\", ":")) or ".." in name:
         return None
     directory = runs_dir()
@@ -166,13 +119,6 @@ def _stat(entry: dict[str, Any] | None) -> dict[str, Any] | None:
 
 
 def _paired(base_items: Any, cand_items: Any) -> dict[str, Any] | None:
-    """Paired McNemar test, degrading to ``None`` on unusable per-item records.
-
-    ``paired_comparison`` subscripts ``index`` and ``correct`` directly, which is
-    right for the CLI (a malformed artifact should be loud there). Here the
-    absence of a significance test is a missing cell in a table, not a reason to
-    fail the request that also carries the accuracies.
-    """
     try:
         return paired_comparison(base_items, cand_items)
     except (KeyError, TypeError, AttributeError):
@@ -180,12 +126,6 @@ def _paired(base_items: Any, cand_items: Any) -> dict[str, Any] | None:
 
 
 def compare_runs(baseline: str, candidate: str, min_improvement: float = 0.05) -> dict[str, Any]:
-    """Row-per-task comparison with an interval on each accuracy and, where the
-    artifacts carry ``per_item``, a paired McNemar test on the difference.
-
-    Raises ``UnknownRunError`` naming the missing side when a run cannot be
-    loaded, so the API can turn it into a 400 that lists what is available.
-    """
     base_payload = load_run(baseline)
     if base_payload is None:
         raise UnknownRunError(baseline)
@@ -227,7 +167,6 @@ def compare_runs(baseline: str, candidate: str, min_improvement: float = 0.05) -
 
 
 def list_configs() -> list[dict[str, Any]]:
-    """The shipped experiment configs, so the UI can show what can be run."""
     directory = configs_dir()
     if not directory.is_dir():
         return []

@@ -30,17 +30,6 @@ def to_grpo_example(example: dict) -> dict:
 
 
 def _require_supported_trl() -> None:
-    """Hard-stop on trl versions whose GRPO batching would silently break us.
-
-    Verified against trl 0.14.0 source: each batch row is one prompt and the
-    trainer generates ``num_generations`` completions per row internally
-    (``num_return_sequences``), so a sequential sampler preserves the
-    curriculum without touching group formation. trl >= 0.15 rewrote GRPO
-    around a repeat-sampler (each prompt repeated G times across the batch,
-    with a batch-divisibility requirement); under that scheme a plain
-    sequential sampler would form advantage groups from *different* prompts —
-    silent corruption, no crash. Refuse to run rather than train garbage.
-    """
     import trl
     from packaging import version
 
@@ -54,26 +43,12 @@ def _require_supported_trl() -> None:
 
 
 class CurriculumGRPOTrainer(GRPOTrainer):
-    """GRPO trainer that consumes the training set in its given (sorted) order.
-
-    The base ``Trainer`` reshuffles every epoch, which would destroy an
-    easy-to-hard curriculum.  Swapping in a sequential sampler preserves the
-    ordering produced by :func:`order_by_curriculum`. Safe on trl 0.14.x only
-    (see :func:`_require_supported_trl`), where groups are formed per prompt
-    row via ``num_return_sequences``, not across the batch dimension.
-    """
 
     def _get_train_sampler(self, *args, **kwargs):
         return SequentialSampler(self.train_dataset)
 
 
 def _grpo_config(**kwargs) -> TRLGRPOConfig:
-    """Build a GRPOConfig, dropping keys unsupported by the installed TRL.
-
-    Dropped keys are reported loudly: a hyperparameter that silently reverts
-    to the library default (e.g. ``beta``) would change the whole RL run while
-    every log claims the config was applied.
-    """
     fields = getattr(TRLGRPOConfig, "__dataclass_fields__", {})
     if fields:
         dropped = {k: v for k, v in kwargs.items() if k not in fields and v is not None}
@@ -90,13 +65,6 @@ def _grpo_config(**kwargs) -> TRLGRPOConfig:
 
 @contextmanager
 def _reuse_loaded_adapter(model):
-    """Let TRL 0.14 reuse a loaded adapter without copying the base model.
-
-    A PEFT policy obtains reference logits by disabling its adapter. TRL 0.14
-    selects that memory-efficient path only when ``peft_config`` is passed, but
-    its normal wrapper would nest a second adapter around an existing PeftModel.
-    This compatibility shim makes that wrapper a no-op during construction.
-    """
     if not isinstance(model, PeftModel):
         yield None
         return
@@ -212,7 +180,6 @@ def main() -> None:
     trainer.save_model(cfg.grpo.final_dir)
     tokenizer.save_pretrained(cfg.grpo.final_dir)
     print(f"GRPO adapter saved to {cfg.grpo.final_dir}")
-
 
 if __name__ == "__main__":
     main()

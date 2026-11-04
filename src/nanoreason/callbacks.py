@@ -1,11 +1,3 @@
-"""Training callbacks for GRPO.
-
-``ForgettingProbe`` periodically re-evaluates the policy on a held-out task
-(MMLU by default) during RL.  A large drop versus the pre-RL baseline is the
-signature of catastrophic forgetting, which is one of the failure modes the
-project is explicitly designed to catch and stop early.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path

@@ -19,7 +19,6 @@ GOOD_COT = "Jane starts with 5.\n5 + 7 = 12\n12 * 2 = 24\n#### 24"
 
 
 def _run_payload(name, accuracy, correct, total, per_item=None):
-    """A minimal but structurally real evaluation artifact."""
     return {
         "run_name": name,
         "base_model": "microsoft/Phi-3-mini-4k-instruct",
@@ -173,13 +172,6 @@ class ServeApiTests(unittest.TestCase):
 
 
 class ServeDegradationTests(unittest.TestCase):
-    """What the API does when its inputs are hostile or corrupt.
-
-    The dashboard reads a directory that a training job may be writing to right
-    now, and its run names arrive from a URL. Both are covered here, because
-    "skipped a bad row" and "500ed the whole page" look identical in a test that
-    only ever feeds the happy path.
-    """
 
     MIXED_COT = "Step 1: 5 + 7 = 12\nStep 2: 12 * 3 = 36\nStep 3: 36 - 6 = 31\nStep 4: 8 / 0 = 4\n#### 30"
 
@@ -328,11 +320,6 @@ class ServeDegradationTests(unittest.TestCase):
             self.assertEqual(runs_mod.runs_dir(), Path("results"))
 
     def test_compare_point_estimate_never_leaves_its_own_interval(self):
-        """A run artifact carries accuracy AND correct/total, two sources for
-        one quantity. If they disagree, the interval is computed from one and
-        the displayed point from the other, and the UI prints an accuracy that
-        sits outside its own confidence bounds. Only correct/total can be
-        trusted to agree with the interval built from it."""
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             corrupt = _run_payload("baseline", 0.90, 1, 100)
@@ -349,9 +336,6 @@ class ServeDegradationTests(unittest.TestCase):
         self.assertGreaterEqual(stat["ci_high"], stat["accuracy"])
 
     def test_runs_and_compare_report_the_same_accuracy_for_the_same_run(self):
-        """Two endpoints, one artifact, one number. If the Runs table trusted
-        the recorded accuracy while Compare derived it, a user could read 0.90
-        on one tab and 0.01 on the next for the very same file."""
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             corrupt = _run_payload("baseline", 0.90, 1, 100)
@@ -392,7 +376,6 @@ class ServeConfigsTests(unittest.TestCase):
         self.assertEqual(default["tasks"], ["aqua", "gsm8k", "mmlu", "strategyqa"])
         self.assertEqual(default["num_generations"], 8)
         self.assertTrue(default["path"].endswith("configs/default.toml"))
-
 
 if __name__ == "__main__":
     unittest.main()

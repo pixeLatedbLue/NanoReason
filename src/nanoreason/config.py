@@ -105,7 +105,6 @@ class ProjectConfig:
 
 
 def _build(cls, values: dict[str, Any], section: str, path: str | Path, **extra):
-    """Construct a config dataclass, naming the file and [section] on bad keys."""
     try:
         return cls(**values, **extra)
     except TypeError as exc:

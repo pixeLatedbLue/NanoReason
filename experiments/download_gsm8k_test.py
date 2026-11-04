@@ -1,5 +1,3 @@
-"""Download the exact official test split used by the local matched comparison."""
-
 import hashlib
 import json
 import urllib.request
@@ -27,7 +25,6 @@ def main() -> None:
         temporary.write_bytes(data)
         temporary.replace(TARGET)
     print(f"Verified {len(rows)} test items: {TARGET}\nSHA256: {EXPECTED_SHA256}")
-
 
 if __name__ == "__main__":
     main()

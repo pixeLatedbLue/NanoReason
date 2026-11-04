@@ -1,31 +1,3 @@
-"""Run the matched base/SFT/GRPO comparison end to end in one session.
-
-The n=64 comparison could not resolve the deltas it measured: 1.6 and 3.1
-points against a sign test that needs roughly 10 at that size. This runs the
-same protocol over a larger sample so the result means something either way.
-
-All three arms must run in one process group on one machine. ``compare_complete``
-refuses to pair runs whose recorded ``environment`` differs, which is the point:
-a baseline measured elsewhere is not a baseline.
-
-Each arm is a separate subprocess so its CUDA context, and the ~2.2 GB of 4-bit
-base weights plus adapter, is released before the next arm loads. On a 16 GB T4
-loading three in one process is how you run out of memory at arm three, six
-hours in.
-
-Arms resume: ``matched_eval`` checkpoints per item, so a killed session
-continues rather than restarting.
-
-Measured on an RTX 4060 the three arms cost 19.8 seconds per item together,
-which is about 7 hours for 1319 items; a T4 is roughly half that speed and a
-Kaggle session is capped at 12 hours. So ``--arms`` runs a subset, one arm per
-session. That pairs correctly because ``environment_info`` records library
-versions and the OS and nothing machine-specific, and the notebook pins those
-versions. Do not edit this module or the modules it hashes between sessions:
-the recorded protocol includes their SHA-256, and a change makes earlier arms
-unpairable.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -39,11 +11,6 @@ ARMS = ("base", "sft", "grpo")
 
 
 def selected_arms(names: str | None) -> tuple[str, ...]:
-    """Which arms this session runs, always in canonical order.
-
-    Base stays first whatever order the names arrive in, because the trained
-    arms pair themselves against base.json as they finish.
-    """
     if not names:
         return ARMS
     chosen = {name.strip() for name in names.split(",") if name.strip()}
@@ -65,11 +32,6 @@ def build_commands(
     grpo_adapter: str | None,
     arms: tuple[str, ...] = ARMS,
 ) -> list[list[str]]:
-    """One command per arm, base first.
-
-    Base must run first: the trained arms compare themselves against
-    ``base.json`` as they finish, so it has to exist by then.
-    """
     adapters = {"base": None, "sft": sft_adapter, "grpo": grpo_adapter}
     for arm in arms:
         if arm != "base" and not adapters[arm]:
@@ -94,13 +56,6 @@ def build_commands(
 
 
 def verify_adapter(adapter: str, expected_sha256: str | None) -> None:
-    """Refuse an adapter whose weights are not the ones asked for.
-
-    Kaggle mounts a notebook's output at its latest version and offers no way
-    to pin an older one, so the directory an arm is handed may hold a
-    different run's artifacts. matched_eval records the hash either way, but
-    it records it after the hours of generation. This fails in a second.
-    """
     if not expected_sha256:
         return
     weights = Path(adapter) / "adapter_model.safetensors"
@@ -114,12 +69,6 @@ def verify_adapter(adapter: str, expected_sha256: str | None) -> None:
 
 
 def ensure_source(source: Path) -> None:
-    """Fetch the official GSM8K test split if it is not already present.
-
-    ``download_gsm8k_test.py`` verifies the file against a pinned SHA-256 and
-    refuses to proceed on a mismatch, so this cannot silently evaluate against
-    different questions than the earlier run did.
-    """
     if source.exists():
         print(f"source present: {source}", flush=True)
         return
@@ -178,7 +127,6 @@ def main() -> int:
     for name in sorted(p.name for p in (out / "runs").glob("*.json")):
         print(f"  runs/{name}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

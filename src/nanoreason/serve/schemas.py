@@ -1,11 +1,3 @@
-"""Request and response models for the HTTP API.
-
-These are the contract the single-page app is written against, so they are
-declared explicitly rather than left to duck typing: a renamed field here is a
-silently blank panel in the browser, and FastAPI's generated OpenAPI schema is
-what makes that contract checkable.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -144,6 +136,5 @@ class ConfigSummary(BaseModel):
 
 class ConfigsResponse(BaseModel):
     configs: list[ConfigSummary]
-
 
 RunPayload = dict[str, Any]

@@ -43,16 +43,6 @@ def format_example(tokenizer, example: dict) -> dict[str, str]:
 def build_completion_collator(
     tokenizer, response_template: str
 ) -> DataCollatorForCompletionOnlyLM:
-    """Collator that masks the loss on everything before the assistant turn.
-
-    Ensures SFT trains only on the reasoning + answer tokens, matching the
-    project design ("loss is computed solely on the reasoning and answer
-    tokens"). The template is passed as token ids (trl's recommendation) so
-    context-dependent tokenization cannot silently break the match. Note trl's
-    behavior when the template is missing from an example (e.g. truncated away
-    by max_seq_length): that example's labels are fully masked with a
-    UserWarning — it contributes zero loss, there is no LM-loss fallback.
-    """
     from trl import DataCollatorForCompletionOnlyLM
 
     template_ids = tokenizer.encode(response_template, add_special_tokens=False)
@@ -60,11 +50,6 @@ def build_completion_collator(
 
 
 def _assert_template_present(tokenizer, response_template: str) -> None:
-    """Fail fast if the response template can't be found in a formatted sample.
-
-    If the template never matches, the collator would mask 100% of examples and
-    the run would 'succeed' while learning nothing.
-    """
     sample = format_example(tokenizer, {"question": "check", "answer": "check"})
     text_ids = tokenizer.encode(sample["text"], add_special_tokens=False)
     template_ids = tokenizer.encode(response_template, add_special_tokens=False)
@@ -178,7 +163,6 @@ def main() -> None:
     trainer.save_model(cfg.sft.final_dir)
     tokenizer.save_pretrained(cfg.sft.final_dir)
     print(f"SFT adapter saved to {cfg.sft.final_dir}")
-
 
 if __name__ == "__main__":
     main()

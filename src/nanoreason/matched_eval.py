@@ -1,5 +1,3 @@
-"""Resumable, fixed-sample GSM8K evaluation of existing base/SFT/GRPO models."""
-
 from __future__ import annotations
 
 import argparse
@@ -26,14 +24,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def adapter_label(adapter: Path | None) -> str | None:
-    """How an adapter is named in recorded provenance.
-
-    Relative to the repository when it lives inside it, absolute otherwise. The
-    label is only a name: integrity comes from ``adapter_files_sha256``, which
-    hashes the adapter's actual contents. An absolute path here would publish
-    the operator's home directory in committed evidence files and buy nothing
-    in verifiability.
-    """
     if adapter is None:
         return None
     try:
@@ -43,13 +33,6 @@ def adapter_label(adapter: Path | None) -> str | None:
 
 
 def reset_peak_memory() -> None:
-    """Start the peak-memory probe over, where there is a GPU to probe.
-
-    torch.cuda.reset_peak_memory_stats raises AttributeError on a CPU-only
-    build of torch rather than returning harmlessly, so the guard is needed to
-    run this protocol on CPU at all. Running it on CPU with a tiny model is how
-    a wrong flag gets caught before it wastes a multi-hour GPU session.
-    """
     import torch
 
     if torch.cuda.is_available():
@@ -57,7 +40,6 @@ def reset_peak_memory() -> None:
 
 
 def peak_allocated_bytes() -> int:
-    """Peak GPU bytes allocated so far, or zero when running on CPU."""
     import torch
 
     if not torch.cuda.is_available():
@@ -150,7 +132,6 @@ def run(args) -> None:
         "code_sha256": {name: digest(Path(__file__).with_name(name)) for name in
                         ("matched_eval.py", "prompts.py", "modeling.py", "metrics.py")},
     }
-    # Render every arm with exactly the same base tokenizer, independent of adapter packaging.
     tokenizer = load_tokenizer(cfg.model.base_model, revision=cfg.model.revision)
     prompts = [gsm8k_prompt(tokenizer, row["question"], few_shot=True) for row in sample["rows"]]
     token_ids = [tokenizer(prompt)["input_ids"] for prompt in prompts]
@@ -234,7 +215,6 @@ def main() -> None:
     parser.add_argument("--max-new-tokens", type=int, choices=range(16, 1025), default=512)
     args = parser.parse_args()
     run(args)
-
 
 if __name__ == "__main__":
     main()

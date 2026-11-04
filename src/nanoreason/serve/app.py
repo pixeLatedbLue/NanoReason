@@ -1,11 +1,3 @@
-"""The NanoReason HTTP API and the single-page app it serves.
-
-Endpoint handlers are declared ``def``, not ``async def``, on purpose: analysis
-and generation are synchronous CPU/GPU work, and an ``async def`` handler doing
-blocking work would stall the whole event loop for every other request. FastAPI
-runs plain ``def`` handlers in a threadpool, which is the correct shape here.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -39,7 +31,6 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 
 def _sse(payload: dict) -> str:
-    """One server-sent-event frame. Separator is a blank line, per the spec."""
     return f"data: {json.dumps(payload)}\n\n"
 
 
@@ -176,7 +167,6 @@ def create_app() -> FastAPI:
 
     return app
 
-
 app = create_app()
 
 
@@ -196,7 +186,6 @@ def main() -> None:
     import uvicorn
 
     uvicorn.run("nanoreason.serve.app:app", host=args.host, port=args.port, reload=args.reload)
-
 
 if __name__ == "__main__":
     main()

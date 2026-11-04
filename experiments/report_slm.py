@@ -1,5 +1,3 @@
-"""Build the original-project results note from complete matched evaluations."""
-
 import argparse
 import json
 from pathlib import Path
@@ -128,7 +126,6 @@ def main() -> None:
     atomic_json(ROOT / "docs/evidence/slm_comparison.json", evidence)
     (ROOT / "docs/SLM_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
     print("Updated docs/SLM_RESULTS.md and docs/evidence/slm_comparison.json")
-
 
 if __name__ == "__main__":
     main()

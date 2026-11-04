@@ -26,7 +26,6 @@ def extract_final_number(text: str) -> str | None:
     numbers = ANY_NUMBER_RE.findall(text)
     return numbers[-1].replace(",", "") if numbers else None
 
-
 LETTER_RE = re.compile(r"####\s*\(?([A-Ea-e])\)?")
 _ANSWER_PHRASE_RE = re.compile(
     r"(?:answer|option|choice)\s*(?:is|:)\s*\(?([A-Ea-e])\)?\b", re.IGNORECASE
@@ -34,15 +33,6 @@ _ANSWER_PHRASE_RE = re.compile(
 
 
 def extract_final_letter(text: str, choices: str = "ABCDE") -> str | None:
-    """Extract the multiple-choice letter from a completion.
-
-    Order of preference: the ``#### B`` marker, then an explicit answer phrase
-    ("the answer is B"), then a bare letter *alone on the last line*. There is
-    deliberately no free-prose fallback: scanning arbitrary text for standalone
-    letters matches the English article "a" and silently corrupts accuracy.
-    Returns ``None`` when no confident extraction exists so the item counts as
-    incorrect for every model symmetrically.
-    """
     markers = LETTER_RE.findall(text)
     if markers:
         return markers[-1].upper()
@@ -77,11 +67,6 @@ def gold_number(answer: str) -> str:
 
 
 def _step_result_matches(computed: float, stated_text: str, tolerance: float) -> bool:
-    """True when the stated result matches the computed one.
-
-    Accepts honest human rounding: ``10 / 3 = 3.33`` is a correct step because
-    3.33 is the computed value rounded to the stated number of decimals.
-    """
     stated = float(stated_text.replace(",", ""))
     if not math.isfinite(computed) or not math.isfinite(stated):
         return False
@@ -94,23 +79,6 @@ def _step_result_matches(computed: float, stated_text: str, tolerance: float) ->
 
 
 def iter_arithmetic_steps(text: str, tolerance: float = 1e-4) -> Iterator[dict[str, Any]]:
-    """Yield one verified-step record per ``a op b = c`` equation in ``text``.
-
-    This is the single source of truth for step verification: both the training
-    signal (``verify_arithmetic_steps`` -> ``rewards.process_reward``) and the
-    browser UI read the *same* records. Two implementations would eventually
-    drift, and the moment they did, the UI's claim that it is showing what the
-    reward actually scored would become a lie.
-
-    Each record carries ``lhs``/``op``/``rhs``/``stated`` exactly as they appear
-    in the text (thousands separators intact, so the UI can echo the model's own
-    words), plus the derived ``computed``, ``ok`` and ``duplicate`` fields.
-    ``duplicate`` marks an equation whose *normalised* ``(lhs, op, rhs, stated)``
-    tuple already appeared earlier, which is what lets callers count repeated
-    equations once. ``computed`` is ``None`` for division by zero: the step is
-    real (it counts as attempted) but no value can be checked, so ``ok`` is
-    False and it can never earn credit.
-    """
     seen: set[tuple[str, str, str, str]] = set()
     for left, op, right, stated in EQUATION_RE.findall(text):
         key = (left.replace(",", ""), op, right.replace(",", ""), stated.replace(",", ""))
@@ -150,15 +118,6 @@ def iter_arithmetic_steps(text: str, tolerance: float = 1e-4) -> Iterator[dict[s
 def verify_arithmetic_steps(
     text: str, tolerance: float = 1e-4, dedupe: bool = False
 ) -> tuple[int, int]:
-    """Numerically verify every ``a op b = c`` equation found in ``text``.
-
-    Returns ``(correct_steps, total_steps)``. This is the deterministic core of
-    the process reward: an equation only counts as correct if the stated result
-    actually matches the computed result, so a model cannot earn process reward
-    by printing plausible-looking but wrong arithmetic. With ``dedupe=True``
-    identical equations are counted once, so repeating ``1 + 1 = 2`` cannot
-    inflate the step count.
-    """
     correct = 0
     total = 0
     for step in iter_arithmetic_steps(text, tolerance):
@@ -171,10 +130,6 @@ def verify_arithmetic_steps(
 
 
 def token_diversity(text: str) -> float:
-    """Unique-token ratio in [0, 1]; an entropy-style anti-collapse proxy.
-
-    Degenerate repetition (a known SLM RL failure mode) drives this toward 0.
-    """
     tokens = text.split()
     if not tokens:
         return 0.0
@@ -200,7 +155,6 @@ class EvalResult:
 
 
 def environment_info() -> dict[str, Any]:
-    """Versions of everything that can move an eval number, for the payload."""
     import importlib.metadata as importlib_metadata
     import platform
 

@@ -58,7 +58,6 @@ def gsm8k_prompt(tokenizer, question: str, few_shot: bool = True) -> str:
     messages.append({"role": "user", "content": question})
     return chat_prompt(tokenizer, messages)
 
-
 AQUA_FEW_SHOT = [
     {
         "q": "A shop sells a pen for $3. How much for 4 pens?\nOptions:\nA)9\nB)12\nC)15\nD)7\nE)6",

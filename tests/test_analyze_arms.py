@@ -40,7 +40,6 @@ def write_progress(directory: Path, arm: str, items: list[dict]) -> None:
 
 class LoadItemsTests(unittest.TestCase):
     def test_missing_arm_names_the_arm(self):
-        """A typo in an arm name should say which file is absent, not KeyError."""
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(FileNotFoundError) as raised:
                 load_items(Path(tmp), "grpo")
@@ -57,8 +56,6 @@ class LoadItemsTests(unittest.TestCase):
 
 class DescribeTests(unittest.TestCase):
     def test_markup_rate_counts_reference_annotation(self):
-        """The GSM8K <<a op b = c>> markup is the signal that the arm imitated
-        the training data's style, so it must be counted on the completion."""
         items = {
             1: item(1, True, completion="<<2+2=4>> so 4\n#### 4"),
             2: item(2, True, completion="plain prose\n#### 4"),
@@ -77,8 +74,6 @@ class DescribeTests(unittest.TestCase):
 
 class FailureBreakdownTests(unittest.TestCase):
     def test_separates_malformed_from_confidently_wrong(self):
-        """The distinction the diagnosis rests on: an arm that answers in the
-        right format and is wrong has a reasoning problem, not a parsing one."""
         items = {
             1: item(1, False),                                   # parsed, wrong
             2: item(2, False, marker=False, prediction=""),      # no marker
@@ -90,7 +85,6 @@ class FailureBreakdownTests(unittest.TestCase):
         self.assertEqual(counts["no_answer_marker"], 1)
         self.assertEqual(counts["token_cap_hit"], 1)
         self.assertEqual(counts["parsed_but_wrong"], 2)
-
 
 if __name__ == "__main__":
     unittest.main()

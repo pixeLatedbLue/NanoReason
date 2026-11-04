@@ -1,5 +1,3 @@
-"""Exercise real inference through the local app; not a model-quality benchmark."""
-
 import argparse
 import json
 import urllib.parse
@@ -57,7 +55,6 @@ def main() -> None:
                       "stream_answer": frames[-1]["analysis"]["answer"],
                       "stream_latency_ms": frames[-1]["latency_ms"],
                       "run_count": len(runs["runs"]), "evidence": str(path)}))
-
 
 if __name__ == "__main__":
     main()

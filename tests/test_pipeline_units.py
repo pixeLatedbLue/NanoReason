@@ -1,10 +1,3 @@
-"""Unit tests for the pipeline modules that previously had none.
-
-prompts, callbacks, modeling and export were exercised only indirectly, or only
-on a GPU. Everything here runs on CPU with stubs standing in for the model, and
-asserts on values the real code produces rather than on the stubs themselves.
-"""
-
 import contextlib
 import io
 import json
@@ -41,7 +34,6 @@ from nanoreason.prompts import (  # noqa: E402
 
 
 class RecordingTokenizer:
-    """Captures the message list handed to the chat template."""
 
     def __init__(self):
         self.calls = []
@@ -250,8 +242,6 @@ class ModelingTests(unittest.TestCase):
 
     @staticmethod
     def _pretend_bitsandbytes_installed(system="Linux"):
-        """bitsandbytes is absent on this CPU box; the config's own constructor
-        checks its version, so both our probe and that lookup are stubbed."""
         return (
             mock.patch("importlib.util.find_spec", return_value=object()),
             mock.patch("importlib.metadata.version", return_value="0.43.1"),
@@ -310,7 +300,6 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(tokenizer.decode.call_args.kwargs["skip_special_tokens"])
         self.assertFalse(model.generate.call_args.kwargs["do_sample"])
         self.assertEqual(model.generate.call_args.kwargs["max_new_tokens"], 8)
-
 
 if __name__ == "__main__":
     unittest.main()

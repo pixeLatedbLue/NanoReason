@@ -1,16 +1,3 @@
-"""Adversarial audit of the NanoReason reward functions.
-
-No GPU, no checkpoint, no network. Every number produced here comes from the
-same deterministic verifier and reward functions that the GRPO trainer calls,
-so what is measured here is the training signal itself, not a description of it.
-
-Four experiments:
-  E1  reward-hacking resistance   -- what each attack strategy actually earns
-  E2  verifier accuracy           -- precision/recall on a labelled equation set
-  E3  answer-extraction coverage  -- marker versus fallback parsing behaviour
-  E4  statistical resolving power -- smallest delta a paired test can detect
-"""
-
 from __future__ import annotations
 
 import json
@@ -42,7 +29,6 @@ _LEGACY_FLOOR = 3
 
 
 def legacy_process_reward(text: str) -> float:
-    """The superseded PRM: substance scaled by a constant three-step floor."""
     correct, total = verify_arithmetic_steps(text, dedupe=True)
     if total == 0:
         return 0.0
@@ -54,11 +40,6 @@ def legacy_process_reward(text: str) -> float:
 
 
 def reward_vector(text: str, gold: str = GOLD) -> dict[str, float]:
-    """The four reward terms and their sum, exactly as GRPO would score them.
-
-    Both PRM variants are reported so the padding exploit and its repair are
-    visible in one table.
-    """
     prompts, completions = [""], [text]
     outcome = outcome_reward(prompts, completions, answer=[gold])[0]
     fmt = format_reward(prompts, completions)[0]
@@ -74,7 +55,6 @@ def reward_vector(text: str, gold: str = GOLD) -> dict[str, float]:
         "total": round(outcome + fmt + proc + div, 4),
         "total_legacy": round(outcome + fmt + legacy + div, 4),
     }
-
 
 HONEST = (
     "Jane starts with 5 apples and buys 7 more.\n5 + 7 = 12\n"
@@ -138,7 +118,6 @@ def e1() -> dict:
         "strategies_beating_honest_legacy": beat_legacy,
     }
 
-
 LABELLED = [
     ("2 + 2 = 4", True),
     ("10 - 3 = 7", True),
@@ -197,7 +176,6 @@ def e2() -> dict:
         "misclassified": misses,
     }
 
-
 EXTRACTION = [
     ("marker", "reasoning here\n#### 42", "42"),
     ("marker with comma", "total spent\n#### 1,234", "1234"),
@@ -220,12 +198,6 @@ def e3() -> dict:
 
 
 def e4(n: int = 300, churn: int = 15) -> dict:
-    """Smallest true improvement a paired McNemar test resolves at n items.
-
-    ``churn`` is the count of items the candidate loses that the baseline got
-    right. A real fine-tune trades some items away, so assuming zero regressions
-    would flatter the test; the discordant pair is (churn + gained, churn).
-    """
     curve = []
     smallest = None
     for delta_points in range(1, 16):
@@ -311,7 +283,6 @@ def main() -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(out, indent=2, sort_keys=True), encoding="utf-8")
     print(f"\nWrote {dest}")
-
 
 if __name__ == "__main__":
     main()

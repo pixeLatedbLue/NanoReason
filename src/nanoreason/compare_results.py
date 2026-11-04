@@ -9,24 +9,12 @@ from .stats import accuracy, paired_comparison, wilson_interval
 
 
 def _accuracy_of(stat: dict) -> float | None:
-    """Accuracy for one task entry, or ``None`` when the task is absent.
-
-    Derived from the counts rather than read from the recorded field, so the
-    number in this column can never disagree with the interval built beside it.
-    """
     if not stat:
         return None
     return accuracy(int(stat.get("correct", 0)), int(stat.get("total", 0)))
 
 
 def load_payload(path: str | Path) -> dict:
-    """The whole run JSON, not just the summary block.
-
-    ``load_summary`` deliberately narrows to the accuracy table because that is
-    all the plain comparison needs; the confidence-interval and paired tests
-    need the per-item detail that lives further down the payload, so they read
-    the file through here instead of re-opening it.
-    """
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
@@ -35,12 +23,6 @@ def load_summary(path: str | Path) -> dict:
 
 
 def per_item_by_task(payload: dict) -> dict[str, list | None]:
-    """Map task -> its ``per_item`` list, or ``None`` when the run lacks one.
-
-    Result files written before ``per_item`` existed simply have no such field,
-    and rerunning old evaluations is expensive; tolerating the gap here means
-    ``--paired`` degrades to "NA" on those rows rather than crashing.
-    """
     by_task: dict[str, list | None] = {}
     for row in payload.get("results") or []:
         task = row.get("task")
@@ -122,7 +104,6 @@ def main() -> None:
 
     if args.strict and not all_pass:
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

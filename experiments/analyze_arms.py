@@ -1,15 +1,3 @@
-"""Describe how two arms differ, item by item, once their runs exist.
-
-The headline numbers say which arm scored higher. They do not say why, and
-``compare_complete`` deliberately reports only the paired test. This reads the
-per-item records both arms already wrote and characterises the disagreement:
-how the losing arm fails, how long its answers run, and whether it adopted the
-annotation style of the training data.
-
-It reads progress files and writes nothing, so it is safe to run between arms.
-It is not part of the recorded protocol and does not import the hashed modules.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -95,7 +83,6 @@ def main() -> int:
             print(f"-- {name}: predicted {item['prediction']} in {item['generated_tokens']} tokens")
             print(item["completion"])
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
