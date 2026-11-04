@@ -6,7 +6,7 @@ The idea: if you only reward the right answer, a model can get there through inv
 
 There's also a small web app that runs the same verifier the trainer uses, so you can paste in a chain of reasoning and see exactly which steps the reward would have accepted.
 
-**Measured status, 18 October 2026:** the original SFT and GRPO checkpoints are preserved and verified. The completed matched 64-question GSM8K comparison scored **base 51/64, SFT 49/64, GRPO 50/64**. No fine-tuning improvement is established on this small sample. The local app supports real inference with each model; the default trained demo is original GRPO. See [the measured report](docs/SLM_RESULTS.md), [runbook](docs/SLM_RUNBOOK.md), and [working context](docs/PROJECT_CONTEXT.md).
+**Measured status, 4 November 2026:** the full GSM8K test split has now been evaluated under a matched protocol. On all 1319 questions: **base 81.27%, SFT 76.50%, GRPO 77.03%**. Both trained arms are significantly *worse* than the untrained base model (exact McNemar, p = 0.00012 and p = 0.00062), and GRPO is statistically indistinguishable from the SFT checkpoint it was trained from (p = 0.37). The fine-tuning pipeline does not improve reasoning on this benchmark, and this repository says so. See [the measured report](docs/SLM_RESULTS.md), [runbook](docs/SLM_RUNBOOK.md), and [working context](docs/PROJECT_CONTEXT.md).
 
 ## The interesting part: I broke my own reward
 
@@ -215,13 +215,15 @@ results/                  evaluation run JSON, read by the Runs tab
 constraints/              the versions this was verified against
 experiments/              the reward audit
 notebooks/                Kaggle notebook
-tests/                    138 tests, no GPU needed
+tests/                    165 tests, no GPU needed
 Makefile                  make help lists the shortcuts
 ```
 
 ## Known limitations
 
-- **No training run yet.** Everything here is verified at the component level. Whether the pipeline actually improves reasoning is untested.
+- **The pipeline does not improve accuracy.** Measured on the full GSM8K test split, SFT costs 4.8 points against the untrained base model and GRPO recovers none of it. See [the measured report](docs/SLM_RESULTS.md). The reward audit below still stands; it validates the reward as a scorer, which is a separate claim from the pipeline working.
+- **GRPO was trained with `max_completion_length = 96`** while the policy's median completion is 116 tokens, so most training rollouts were truncated before reaching the answer marker. That is the leading suspect for the null result and it has not been retested.
+- **One benchmark, one seed, greedy decoding.** GSM8K only, which is where the arithmetic verifier applies.
 - The verifier only handles binary arithmetic on plain numbers. That covers GSM8K well and not much else, so StrategyQA and MMLU get outcome and format signal but no step-level checking.
 - The reward audit covers five attacks I thought of. A model under optimisation pressure searches a much bigger space.
 - StrategyQA is evaluated on its train split, since the source used here doesn't expose a standard held-out one. That should be fixed before making benchmark claims.

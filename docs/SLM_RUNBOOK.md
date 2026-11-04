@@ -1,5 +1,12 @@
 # Run the original NanoReason SLM project
 
+> **Superseded in part, 4 November 2026.** The 64-question figures below are the pilot.
+> The full 1,319-question GSM8K test split has since been evaluated: base 81.27%,
+> SFT 76.50%, GRPO 77.03%, with both trained arms significantly worse than base
+> (p = 0.000123 and p = 0.000620) and GRPO indistinguishable from SFT (p = 0.371).
+> See [SLM_RESULTS.md](SLM_RESULTS.md). The pilot detail is kept because it records
+> how the checkpoints were recovered and verified.
+
 This branch serves Phi-3-mini with the original QLoRA SFT or GRPO adapters.
 The separately preserved proof-graph and safety projects are outside this scope.
 

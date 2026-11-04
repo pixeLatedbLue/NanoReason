@@ -1,5 +1,12 @@
 # NanoReason: SLM fine-tuning working context
 
+> **Superseded in part, 4 November 2026.** The 64-question figures below are the pilot.
+> The full 1,319-question GSM8K test split has since been evaluated: base 81.27%,
+> SFT 76.50%, GRPO 77.03%, with both trained arms significantly worse than base
+> (p = 0.000123 and p = 0.000620) and GRPO indistinguishable from SFT (p = 0.371).
+> See [SLM_RESULTS.md](SLM_RESULTS.md). The pilot detail is kept because it records
+> how the checkpoints were recovered and verified.
+
 Updated: 19 October 2026 (Asia/Calcutta). Active branch: `codex/slm-finetuning`, based on
 original `main` commit `75f0fa7`.
 
@@ -178,8 +185,12 @@ confidence intervals, latency, memory, training evidence and limitations.
 evidence are being committed locally on `codex/slm-finetuning`; use `git log -1`
 and `git status --short` to verify that final save.
 
-Larger held-out evaluations or revised training are optional future work and
-require a new agreed scope. Do not change the 64-question test set into training
+The larger held-out evaluation has since been run: the full 1,319-question test
+split, three arms, one arm per session, recorded in
+[SLM_RESULTS.md](SLM_RESULTS.md). What remains optional future work is revised
+training, specifically a GRPO retrain with a completion length above the
+policy's output distribution, and that requires a new agreed scope. Do not
+change the 64-question test set into training
 data or tune to these results. Do not claim the model improved over its base.
 
 Do not launch training simply because the old README says it is unfinished.
