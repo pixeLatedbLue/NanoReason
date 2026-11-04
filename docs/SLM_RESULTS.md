@@ -10,7 +10,7 @@ All 1,319 official GSM8K test questions. Each arm ran in its own Kaggle T4 sessi
 is only legitimate because the harness records a SHA-256 for the evaluation sample, the
 rendered prompt ids, the evaluation source files and the resolved library versions, and
 refuses to pair runs whose records disagree. All four agree across the three sessions.
-Greedy decoding, 512-token answer limit, eight-shot prompt, NF4 4-bit loading, seed 42.
+Greedy decoding, 512-token answer limit, two-shot prompt, NF4 4-bit loading, seed 42.
 
 | Model | Correct | Accuracy | Wilson 95% interval | Token-cap rate | Answer-marker rate |
 |---|---:|---:|---:|---:|---:|
@@ -40,8 +40,8 @@ simply wrong.
 
 What did change is style. GSM8K reference solutions carry inline `<<a op b = c>>` calculator
 annotations. The base model emits them in 0 of 1319 completions; after SFT they appear in
-98.0%, and median completion length falls from 150 tokens to 116, toward the 63-token median
-of the reference solutions. The warm-up learned the surface form of its targets. Note that
+98.0%, and median completion length falls from 150 tokens to 116, which is essentially the
+122-token median of the reference solutions themselves. The warm-up learned the surface form of its targets. Note that
 within each arm the *longer* completions are the less accurate ones, so this is not evidence
 that shorter reasoning causes errors; it is evidence that the model moved toward its training
 distribution and away from the verbose chain-of-thought that was serving it.
@@ -59,6 +59,10 @@ python experiments/analyze_arms.py --directory artifacts/slm/evaluation-full --b
 ```
 
 ## Pilot: 64 questions, 18 October 2026
+
+The pilot is not the same protocol as the full split: the harness records a different
+hash for `prompts.py` between the two, so each is internally matched but they are not
+poolable. The comparison below is between the pilot's own arms.
 
 64 fixed questions sampled with seed 42 from all 1,319 GSM8K test questions. All arms use the pinned Phi-3-mini base, the same base tokenizer and two-shot prompt, greedy decoding, a 512-token answer limit, and NF4 4-bit loading on the RTX 4060 laptop.
 
